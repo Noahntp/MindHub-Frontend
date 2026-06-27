@@ -539,30 +539,40 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
   }
 
   return (
-    <div className="fixed inset-0 bg-main-darker z-[9999] flex flex-col md:flex-row-reverse h-screen text-brand-light font-sans">
+    <div className={`fixed inset-0 z-[9999] flex flex-col md:flex-row-reverse h-screen font-sans ${classroomTheme === 'dark' ? 'bg-[#12161e] text-stone-200' : classroomTheme === 'sepia' ? 'bg-[#f4ebd0] text-[#4d3227]' : 'bg-[#faf8f5] text-stone-900'}`}>
       
       {/* Dynamic Classroom Sidebar: List Chapters and Chapters Video preview */}
-      <div className={`bg-main-dark border-brand-light/10 flex flex-col shrink-0 transition-all duration-300 ${isSidebarVisible ? 'w-full md:w-80 h-1/3 md:h-full border-b md:border-b-0 md:border-l' : 'w-0 h-0 overflow-hidden pointer-events-none md:border-l-0 border-b-0'}`}>
-        <div className="p-4 bg-brand-dark flex items-center justify-between border-b border-brand-light/10">
+      <div className={`flex flex-col shrink-0 transition-all duration-300 ${
+        classroomTheme === 'dark' ? 'bg-[#12161e] border-[#2d3139] text-stone-200' : classroomTheme === 'sepia' ? 'bg-[#f4ebd0] border-[#cbbfa0] text-[#4d3227]' : 'bg-white border-stone-200 text-stone-900'
+      } ${isSidebarVisible ? 'w-full md:w-80 h-1/3 md:h-full border-b md:border-b-0 md:border-l' : 'w-0 h-0 overflow-hidden pointer-events-none md:border-l-0 border-b-0'}`}>
+        <div className={`p-4 flex items-center justify-between border-b ${
+          classroomTheme === 'dark' ? 'bg-[#181a20] border-[#2d3139]' : classroomTheme === 'sepia' ? 'bg-[#e6dcb8] border-[#cbbfa0]' : 'bg-stone-50 border-stone-200'
+        }`}>
           <button 
             onClick={onClose} 
-            className="flex items-center gap-1.5 text-xs font-medium text-stone-400 hover:text-[#eee5db] bg-transparent hover:bg-stone-800/60 py-1.5 px-3 rounded-lg border border-transparent hover:border-stone-750/50 transition-all cursor-pointer font-display"
+            className={`flex items-center gap-1.5 text-xs font-bold py-1.5 px-3 rounded-lg border transition-all cursor-pointer font-display ${
+              classroomTheme === 'dark' ? 'text-stone-300 hover:text-white bg-white/5 hover:bg-white/10 border-white/10' : classroomTheme === 'sepia' ? 'text-[#4d3227] hover:text-[#291a18] bg-[#dfd4b3]/50 hover:bg-[#dfd4b3] border-[#cbbfa0]' : 'text-stone-700 hover:text-stone-900 bg-white hover:bg-stone-100 border-stone-200 shadow-xs'
+            }`}
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Thoát lớp học
           </button>
           <div className="text-right">
-            <span className="text-[10px] text-gray-400 block font-mono">MindHub Study</span>
+            <span className={`text-[10px] block font-mono font-semibold ${classroomTheme === 'dark' ? 'text-gray-400' : classroomTheme === 'sepia' ? 'text-[#7d655c]' : 'text-stone-500'}`}>MindHub Study</span>
           </div>
         </div>
 
         {/* Course Progress Percent Indicator */}
-        <div className="p-4 border-b border-brand-light/10 bg-brand-light/5 text-xs">
-          <div className="flex justify-between font-medium mb-1.5">
-            <span>Tiến độ học tập:</span>
-            <span className="font-mono text-brand-light-active">{calculatedPercent}% ({completedLessonsCount}/{totalLessonsCount} bài)</span>
+        <div className={`p-4 border-b text-xs ${
+          classroomTheme === 'dark' ? 'bg-[#181a20] border-[#2d3139]' : classroomTheme === 'sepia' ? 'bg-[#fcf5e3]/60 border-[#cbbfa0]' : 'bg-stone-50 border-stone-200'
+        }`}>
+          <div className="flex justify-between font-bold mb-1.5">
+            <span className={classroomTheme === 'dark' ? 'text-stone-300' : classroomTheme === 'sepia' ? 'text-[#5c3e35]' : 'text-stone-700'}>Tiến độ học tập:</span>
+            <span className={`font-mono font-bold ${classroomTheme === 'dark' ? 'text-sky-400' : classroomTheme === 'sepia' ? 'text-[#734c2f]' : 'text-brand-normal'}`}>{calculatedPercent}% ({completedLessonsCount}/{totalLessonsCount} bài)</span>
           </div>
-          <div className="w-full bg-main-darker rounded-full h-2 overflow-hidden border border-brand-light/10">
-            <div className="bg-brand-normal h-full transition-all duration-300" style={{ width: `${calculatedPercent}%` }}></div>
+          <div className={`w-full rounded-full h-2 overflow-hidden border ${
+            classroomTheme === 'dark' ? 'bg-[#2d3139] border-[#3b3e47]' : classroomTheme === 'sepia' ? 'bg-[#dfd4b3] border-[#cbbfa0]' : 'bg-stone-200 border-stone-300'
+          }`}>
+            <div className={`h-full transition-all duration-300 ${classroomTheme === 'sepia' ? 'bg-[#734c2f]' : 'bg-brand-normal'}`} style={{ width: `${calculatedPercent}%` }}></div>
           </div>
           
           {calculatedPercent === 100 && (
@@ -578,12 +588,16 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
           if (!nextLesson) return null;
           const isNextLessonLocked = !hasFullCourseAccess && !nextLesson.isPreview;
           return (
-            <div className="p-3 border-b border-brand-light/10 bg-brand-light/5 text-[11px] space-y-1.5 flex flex-col">
+            <div className={`p-3 border-b text-[11px] space-y-1.5 flex flex-col ${
+              classroomTheme === 'dark' ? 'bg-[#181a20] border-[#2d3139]' : classroomTheme === 'sepia' ? 'bg-[#fcf5e3]/60 border-[#cbbfa0]' : 'bg-stone-50 border-stone-200'
+            }`}>
               <div className="flex justify-between items-center text-[10px] text-amber-500 font-bold uppercase tracking-wider">
                 <span>💡 Gợi ý học tiếp</span>
-                {!isNextLessonLocked && <span className="bg-emerald-500/20 text-emerald-400 font-mono text-[9px] px-1.5 py-0.2 rounded">SẴN SÀNG</span>}
+                {!isNextLessonLocked && <span className="bg-emerald-500/20 text-emerald-400 font-mono text-[9px] px-1.5 py-0.2 rounded font-bold">SẴN SÀNG</span>}
               </div>
-              <p className="font-semibold text-stone-200 line-clamp-1 leading-snug">{nextLesson.title}</p>
+              <p className={`font-bold line-clamp-1 leading-snug ${
+                classroomTheme === 'dark' ? 'text-stone-200' : classroomTheme === 'sepia' ? 'text-[#4d3227]' : 'text-stone-800'
+              }`}>{nextLesson.title}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -594,10 +608,10 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
                   handleSelectLesson(nextLesson.id);
                   logActivity('Nhấp bài gợi ý sidebar', `Vào bài gợi ý: ${nextLesson.title}`);
                 }}
-                className={`w-full py-1 rounded text-[10px] font-extrabold text-center transition-all cursor-pointer ${
+                className={`w-full py-1.5 rounded text-[10px] font-extrabold text-center transition-all cursor-pointer ${
                   isNextLessonLocked 
                     ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-50' 
-                    : 'bg-brand-normal hover:bg-brand-hover text-white shadow-xs'
+                    : classroomTheme === 'sepia' ? 'bg-[#734c2f] hover:bg-[#5c3b24] text-white shadow-xs' : 'bg-brand-normal hover:bg-brand-hover text-white shadow-xs'
                 }`}
               >
                 {isNextLessonLocked ? '🔒 Bài học tiếp đang Khóa' : 'Nhấn học tiếp »'}
@@ -607,10 +621,12 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
         })()}
 
         {/* Chapters Table View */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-3">
+        <div className="flex-1 overflow-y-auto p-2 space-y-3 tactile-scrollbar">
           {course.chapters.map((chapter) => (
             <div key={chapter.id} className="space-y-1">
-              <h4 className="text-xs font-semibold text-brand-light-active px-2 py-1 leading-snug">
+              <h4 className={`text-xs font-bold px-2 py-1 leading-snug ${
+                classroomTheme === 'dark' ? 'text-sky-400' : classroomTheme === 'sepia' ? 'text-[#734c2f]' : 'text-deep-indigo'
+              }`}>
                 {chapter.title}
               </h4>
               <div className="space-y-1">
@@ -622,12 +638,12 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
                     <button
                       key={lesson.id}
                       onClick={() => handleSelectLesson(lesson.id)}
-                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 text-xs ${
+                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 text-xs border ${
                         isCurrent 
-                          ? 'bg-brand-normal text-brand-light font-medium' 
+                          ? classroomTheme === 'dark' ? 'bg-brand-normal text-white font-bold shadow-md border-sky-400/30' : classroomTheme === 'sepia' ? 'bg-[#734c2f] text-white font-bold shadow-md border-[#432c28]' : 'bg-brand-normal text-white font-bold shadow-md border-deep-indigo'
                           : isLocked 
-                            ? 'hover:bg-red-950/20 text-stone-500 opacity-60' 
-                            : 'hover:bg-brand-light/5 text-gray-300'
+                            ? classroomTheme === 'dark' ? 'hover:bg-red-950/20 text-stone-500 opacity-60 border-transparent' : classroomTheme === 'sepia' ? 'hover:bg-red-100/50 text-[#8c7468] opacity-60 border-transparent' : 'hover:bg-red-50 text-stone-400 opacity-60 border-transparent'
+                            : classroomTheme === 'dark' ? 'hover:bg-white/5 text-stone-200 border-transparent hover:border-stone-700' : classroomTheme === 'sepia' ? 'hover:bg-[#dfd4b3]/60 text-[#4d3227] border-transparent hover:border-[#cbbfa0]' : 'hover:bg-stone-100 text-stone-800 border-transparent hover:border-stone-200'
                       }`}
                     >
                       {isLocked ? (
@@ -640,19 +656,25 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
                             e.stopPropagation();
                             handleToggleComplete(lesson.id);
                           }}
-                          className="mt-0.5 rounded border-brand-light/20 text-brand-normal focus:ring-brand-normal shadow-xs bg-transparent cursor-pointer"
+                          className={`mt-0.5 rounded focus:ring-2 shadow-xs bg-transparent cursor-pointer ${
+                            isCurrent ? 'border-white text-white focus:ring-white' : 'border-stone-400 text-brand-normal focus:ring-brand-normal'
+                          }`}
                           onClick={(e) => e.stopPropagation()} // Prevent selecting parent lesson
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className={`line-clamp-2 leading-relaxed ${isLocked ? 'line-through decoration-stone-600/40' : ''}`}>{lesson.title}</p>
-                        <span className="font-mono text-[10px] text-gray-400 mt-1 block">
+                        <p className={`line-clamp-2 leading-relaxed font-semibold ${isLocked ? 'line-through decoration-stone-600/40' : ''}`}>{lesson.title}</p>
+                        <span className={`font-mono text-[10px] mt-1 block ${
+                          isCurrent ? (classroomTheme === 'sepia' ? 'text-[#fcf5e3]' : 'text-sky-100') : (classroomTheme === 'dark' ? 'text-stone-400' : classroomTheme === 'sepia' ? 'text-[#7d655c]' : 'text-stone-500')
+                        }`}>
                           [{lesson.type.toUpperCase()}] • {lesson.duration} 
                           {isLocked && <span className="text-red-400 font-bold ml-1">(Khóa)</span>}
                         </span>
                       </div>
                       {lesson.isPreview && (
-                        <span className="text-[9px] bg-brand-light/10 text-brand-light-active px-1.5 py-0.5 rounded uppercase font-bold shrink-0">Miễn phí</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold shrink-0 ${
+                          isCurrent ? 'bg-white/20 text-white' : classroomTheme === 'dark' ? 'bg-white/10 text-stone-300' : classroomTheme === 'sepia' ? 'bg-[#dfd4b3] text-[#4d3227]' : 'bg-stone-200 text-stone-700'
+                        }`}>Miễn phí</span>
                       )}
                     </button>
                   );
@@ -679,17 +701,18 @@ Nó tự biến mọi component của bạn thành 'pure memoized render' tươn
             {/* Toggle Sidebar Collapse button */}
             <button
               onClick={() => setIsSidebarVisible(!isSidebarVisible)}
-              className={`p-1.5 px-3 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              aria-label={isSidebarVisible ? "Ẩn bảng tiến trình và danh sách bài học" : "Hiện bảng tiến trình và danh sách bài học"}
+              className={`p-2 px-3.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer shadow-sm focus:ring-2 focus:ring-offset-2 ${
                 classroomTheme === 'dark' 
-                  ? 'bg-white/5 hover:bg-white/10 text-brand-light-active border border-[#2d3139]' 
+                  ? 'bg-[#2d3139] hover:bg-[#3b3e47] active:bg-[#12161e] text-white border border-stone-600 focus:ring-sky-400' 
                   : classroomTheme === 'sepia' 
-                    ? 'bg-[#dbcdc3]/60 hover:bg-[#dbcdc3]/90 text-[#3d2c25] border border-[#cbbfa0]' 
-                    : 'bg-[#f5ece3] hover:bg-[#dbcdc3] text-main-darker border border-brand-light-active'
+                    ? 'bg-[#e6dcb8] hover:bg-[#dfd4b3] active:bg-[#cbbfa0] text-[#3d2c25] border border-[#cbbfa0] focus:ring-[#734c2f]' 
+                    : 'bg-brand-normal hover:bg-brand-hover active:bg-brand-dark text-white border border-brand-normal focus:ring-brand-normal'
               }`}
               title={isSidebarVisible ? "Ẩn bảng tiến trình & danh sách bài học" : "Hiện bảng tiến trình & danh sách bài học"}
             >
-              <span className="flex items-center gap-1.5">
-                {isSidebarVisible ? <FolderMinus className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />}
+              <span className="flex items-center gap-2">
+                {isSidebarVisible ? <FolderMinus className="w-4 h-4 shrink-0" /> : <FolderPlus className="w-4 h-4 shrink-0" />}
                 {isSidebarVisible ? 'Ẩn tiến độ & bài học' : 'Hiện tiến độ & bài học'}
               </span>
             </button>

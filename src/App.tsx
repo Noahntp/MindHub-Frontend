@@ -129,18 +129,24 @@ const INSTRUCTORS_DATA = [
 export default function App() {
   // --- CORE STATE MANAGERS ---
   const [currentUser, setCurrentUser] = useState<UserType>(() => {
-    const stored = localStorage.getItem('mindhub_current_user');
-    if (stored) {
-      try { return normalizeUser(JSON.parse(stored)); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_current_user');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (parsed) return normalizeUser(parsed);
+      }
+    } catch (e) { console.error('Error parsing currentUser:', e); }
     return INITIAL_USER;
   });
   const [categoriesList, setCategoriesList] = useState<string[]>(['All', 'Development', 'Design', 'Marketing', 'Artificial Intelligence', 'Business & Startup', 'Data Science', 'Cybersecurity']);
   const [courses, setCourses] = useState<Course[]>(() => {
-    const stored = localStorage.getItem('mindhub_courses_db');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_courses_db');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) { console.error('Error parsing courses:', e); }
     const dates: Record<string, string> = {
       'course-1': '2026-05-15',
       'course-2': '2026-04-10',
@@ -157,47 +163,65 @@ export default function App() {
     }));
   });
   const [favorites, setFavorites] = useState<string[]>(() => {
-    const stored = localStorage.getItem('mindhub_favorites');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_favorites');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing favorites:', e); }
     return INITIAL_FAVORITES;
   });
   const [cart, setCart] = useState<string[]>(() => {
-    const stored = localStorage.getItem('mindhub_cart');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_cart');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing cart:', e); }
     return [];
   });
   const [notifications, setNotifications] = useState<Notification[]>(() => {
-    const stored = localStorage.getItem('mindhub_notifications');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_notifications');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing notifications:', e); }
     return INITIAL_NOTIFICATIONS;
   });
   const [flaggedReviews, setFlaggedReviews] = useState<FlaggedItem[]>(() => {
-    const stored = localStorage.getItem('mindhub_flagged_reviews');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_flagged_reviews');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing flaggedReviews:', e); }
     return FLAGGED_REVIEWS_MOCK;
   });
   const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>(() => {
-    const stored = localStorage.getItem('mindhub_payout_requests');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_payout_requests');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing payoutRequests:', e); }
     return PAYOUT_REQUESTS_MOCK;
   });
   
   // Account closure & lock request states
   const [accountRequests, setAccountRequests] = useState<AccountRequest[]>(() => {
-    const stored = localStorage.getItem('mindhub_account_requests');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_account_requests');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing accountRequests:', e); }
     return [
       {
         id: 'req-1',
@@ -248,8 +272,62 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'rating' | 'bestseller' | 'priceAsc' | 'priceDesc' | 'newest' | 'oldest'>('newest');
+  const [coursePurchaseFilter, setCoursePurchaseFilter] = useState<'all' | 'unpurchased' | 'purchased'>('all');
   const [showHeroPopup, setShowHeroPopup] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'intro'>('home');
+  const [currentRoute, setCurrentRoute] = useState<string>(() => {
+    const path = window.location.pathname;
+    if (path.includes('/favorites')) return 'favorites';
+    if (path.includes('/notifications')) return 'notifications';
+    if (path.includes('/profile') || path.includes('/account/profile')) return 'profile';
+    if (path.includes('/intro')) return 'intro';
+    if (path.includes('/my-courses')) return 'my-courses';
+    return 'home';
+  });
+
+  const navigateTo = (route: string) => {
+    setCurrentRoute(route);
+    let path = '/';
+    if (route === 'favorites') path = '/favorites';
+    if (route === 'notifications') path = '/notifications';
+    if (route === 'profile') path = '/profile';
+    if (route === 'intro') path = '/intro';
+    if (route === 'my-courses') path = '/my-courses';
+    window.history.pushState({}, '', path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path.includes('/favorites')) setCurrentRoute('favorites');
+      else if (path.includes('/notifications')) setCurrentRoute('notifications');
+      else if (path.includes('/profile') || path.includes('/account/profile')) setCurrentRoute('profile');
+      else if (path.includes('/intro')) setCurrentRoute('intro');
+      else if (path.includes('/my-courses')) setCurrentRoute('my-courses');
+      else setCurrentRoute('home');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const activeTab = currentRoute;
+  const setActiveTab = navigateTo;
+
+  // States for my-courses page
+  const [myCoursesSearch, setMyCoursesSearch] = useState('');
+  const [myCoursesParentCat, setMyCoursesParentCat] = useState('All');
+  const [myCoursesChildCat, setMyCoursesChildCat] = useState('All');
+  const [myCoursesStatus, setMyCoursesStatus] = useState('All');
+  const [myCoursesSort, setMyCoursesSort] = useState('recent');
+  const [myCoursesPage, setMyCoursesPage] = useState(1);
+
+  // Extra state for filter/search in Favorites & Notifications & Avatar dropdown
+  const [favSearch, setFavSearch] = useState('');
+  const [favCategory, setFavCategory] = useState('All');
+  const [favSort, setFavSort] = useState('newest');
+  const [notifFilter, setNotifFilter] = useState<'all' | 'unread' | 'read'>('all');
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [profileSectionTab, setProfileSectionTab] = useState<'personal' | 'security' | 'preferences' | 'activities'>('personal');
   const [coursesPage, setCoursesPage] = useState<number>(1);
   const [favSortBy, setFavSortBy] = useState<'favoritesDesc' | 'ratingDesc' | 'priceAsc'>('favoritesDesc');
   const [recentPurchasedFilter, setRecentPurchasedFilter] = useState<'1_week' | '2_weeks' | '3_weeks' | '1_month' | 'all'>('all');
@@ -264,19 +342,25 @@ export default function App() {
 
   // Enrolled courses (purchased courses by student)
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>(() => {
-    const stored = localStorage.getItem('mindhub_enrolled_courses_db');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_enrolled_courses_db');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing enrolledCourseIds:', e); }
     return ['course-1'];
   });
 
   // Orders and transactions history (student payments & admin control)
   const [orders, setOrders] = useState<Order[]>(() => {
-    const stored = localStorage.getItem('mindhub_orders');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_orders');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing orders:', e); }
     return [
       {
         id: 'MIND-128491',
@@ -306,10 +390,13 @@ export default function App() {
 
   // Banners and homepage advertising
   const [banners, setBanners] = useState<Banner[]>(() => {
-    const stored = localStorage.getItem('mindhub_banners');
-    if (stored) {
-      try { return JSON.parse(stored); } catch (e) { console.error(e); }
-    }
+    try {
+      const stored = localStorage.getItem('mindhub_banners');
+      if (stored && stored !== 'null' && stored !== 'undefined') {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) { console.error('Error parsing banners:', e); }
     return INITIAL_BANNERS;
   });
 
@@ -321,9 +408,29 @@ export default function App() {
   // Active Screens & Modals triggers
   const [showAuth, setShowAuth] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    const stored = localStorage.getItem('mindhub_is_logged_in');
-    return stored === null ? true : stored === 'true';
+    try {
+      const stored = localStorage.getItem('mindhub_is_logged_in');
+      return (stored === null || stored === 'undefined' || stored === 'null') ? true : stored === 'true';
+    } catch (e) { console.error('Error parsing isLoggedIn:', e); return true; }
   });
+
+  // Welcome back box state
+  const [showWelcomeToast, setShowWelcomeToast] = useState(false);
+  useEffect(() => {
+    if (isLoggedIn && currentUser && currentUser.name) {
+      const alreadyShown = sessionStorage.getItem('mindhub_welcome_shown');
+      if (!alreadyShown) {
+        setShowWelcomeToast(true);
+        sessionStorage.setItem('mindhub_welcome_shown', 'true');
+        const timer = setTimeout(() => {
+          setShowWelcomeToast(false);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setShowWelcomeToast(false);
+    }
+  }, [isLoggedIn, currentUser?.name]);
 
   useEffect(() => {
     localStorage.setItem('mindhub_notifications', JSON.stringify(notifications));
@@ -367,7 +474,7 @@ export default function App() {
 
   useEffect(() => {
     setCoursesPage(1);
-  }, [selectedCategory, selectedSubcategory, searchQuery, sortBy]);
+  }, [selectedCategory, selectedSubcategory, searchQuery, sortBy, coursePurchaseFilter]);
 
   const getCoursePurchaseDate = (courseId: string): Date => {
     const matchedOrder = orders.find(o => o.status === 'success' && o.courses.some(item => item.id === courseId));
@@ -502,14 +609,16 @@ export default function App() {
 
   // Automatically enroll in courses when order status changes to success
   useEffect(() => {
+    if (!Array.isArray(orders)) return;
     const successCourseIds = orders
-      .filter(o => o.status === 'success')
-      .flatMap(o => o.courses.map(c => c.id));
+      .filter(o => o && o.status === 'success' && Array.isArray(o.courses))
+      .flatMap(o => o.courses.map(c => c?.id).filter(Boolean));
     
     setEnrolledCourseIds(prev => {
-      const merged = Array.from(new Set([...prev, ...successCourseIds]));
-      if (prev.length === merged.length && prev.every(v => merged.includes(v))) {
-        return prev;
+      const safePrev = Array.isArray(prev) ? prev : [];
+      const merged = Array.from(new Set([...safePrev, ...successCourseIds]));
+      if (safePrev.length === merged.length && safePrev.every(v => merged.includes(v))) {
+        return safePrev;
       }
       return merged;
     });
@@ -518,7 +627,7 @@ export default function App() {
   // Reset course pagination page when filters or sorting change
   useEffect(() => {
     setCoursesPage(1);
-  }, [searchQuery, selectedCategory, selectedSubcategory, sortBy]);
+  }, [searchQuery, selectedCategory, selectedSubcategory, sortBy, coursePurchaseFilter]);
 
   // Active Screens & Modals triggers
   const [showCart, setShowCart] = useState(false);
@@ -1502,10 +1611,16 @@ export default function App() {
     const matchesCat = selectedCategory === 'All' || c.category === selectedCategory;
     const matchesSubcat = selectedSubcategory === 'All' || c.subcategory === selectedSubcategory;
     
+    // Purchase status filter
+    const isEnrolled = Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id);
+    const matchesPurchase = coursePurchaseFilter === 'all' || 
+                           (coursePurchaseFilter === 'purchased' && isEnrolled) || 
+                           (coursePurchaseFilter === 'unpurchased' && !isEnrolled);
+
     // Non-active or hidden courses are invisible to standard Student role
     const isVisibleForCurrentRole = currentUser.role !== 'student' || (c.status === 'active' && !c.isHidden);
 
-    return matchesSearch && matchesCat && matchesSubcat && isVisibleForCurrentRole;
+    return matchesSearch && matchesCat && matchesSubcat && matchesPurchase && isVisibleForCurrentRole;
   });
 
   const sortedCourses = [...filteredCourses].sort((a, b) => {
@@ -1693,19 +1808,52 @@ export default function App() {
         </div>
       </div>
 
+      {/* --- WELCOME BACK TOAST --- */}
+      {showWelcomeToast && isLoggedIn && currentUser && (
+        <div 
+          aria-live="polite"
+          className="fixed top-20 right-6 z-[10000] bg-white border border-[#e8ded3] rounded-2xl p-4.5 shadow-2xl flex items-start gap-3.5 max-w-sm animate-bounce text-left select-none duration-1000"
+        >
+          <div className="w-10 h-10 bg-[#f5ece3] text-[#8b5e3c] rounded-full flex items-center justify-center font-bold text-base shrink-0 border border-[#eedecf]">
+            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] bg-amber-100 text-[#8b5e3c] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                👋 Chào mừng trở lại
+              </span>
+              <button 
+                onClick={() => setShowWelcomeToast(false)}
+                className="text-stone-400 hover:text-stone-700 font-bold text-xs w-5 h-5 rounded-full hover:bg-stone-100 flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent"
+                aria-label="Đóng thông báo"
+              >
+                ✕
+              </button>
+            </div>
+            <h4 className="text-xs font-black text-stone-850 mt-1.5 truncate">
+              Chào mừng trở lại, {currentUser?.name || 'Học viên'}!
+            </h4>
+            <p className="text-[11px] text-stone-500 mt-0.5 leading-relaxed">
+              Tiếp tục hành trình học tập của bạn hôm nay.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* --- SITE NAVIGATION HEADER --- */}
-      <header className="bg-white border-b border-brand-light-active py-4 px-4 md:px-8 flex justify-between items-center sticky top-0 z-40 shadow-xs">
+      <header className="bg-white border-b border-brand-light-active py-2 md:py-3 px-4 md:px-8 flex justify-between items-center sticky top-0 z-40 shadow-xs">
         
         {/* Logo / Brand Name */}
         <button 
-          onClick={() => { setViewedCourse(null); setStudyingCourse(null); }}
-          className="flex items-center gap-2.5 text-deep-indigo group select-none text-left shrink-0 animate-fade-in"
+          onClick={() => { setViewedCourse(null); setStudyingCourse(null); navigateTo('home'); }}
+          aria-label="MindHub Trang chủ"
+          className="flex items-center gap-2.5 text-deep-indigo group select-none text-left shrink-0 animate-fade-in cursor-pointer border-none bg-transparent"
         >
-          <div className="p-2.5 bg-pale-cyan rounded-xl group-hover:bg-brand-light-hover transition-colors flex items-center justify-center border border-emerald-250/30">
-            <Globe className="w-5 h-5 text-forest-teal animate-spin" style={{ animationDuration: '20s' }} />
+          <div className="header-logo group-hover:scale-105 transition-transform bg-white">
+            <img src="/header-logo.png" alt="MindHub Logo" className="object-contain" width={100} height={40} />
           </div>
           <div className="hidden xs:block">
-            <span className="font-suisseintl font-black text-lg md:text-2xl tracking-tighter text-deep-ink leading-none block select-none">MindHub</span>
+            <span className="font-suisseintl font-black text-lg md:text-2xl tracking-tighter text-deep-ink leading-none block select-none group-hover:text-brand-normal transition-colors">MindHub</span>
             <span className="text-[9px] text-slate font-suisseintlmono block mt-0.5 uppercase tracking-wide">Hệ thống Đào tạo & Quản trị Tri thức</span>
           </div>
         </button>
@@ -2217,19 +2365,53 @@ export default function App() {
             )}
           </div>
 
+          {/* Header Main Navigation Links (Replacing old tab bar) */}
+          <div className="flex items-center gap-1 sm:gap-1.5 pr-1 sm:pr-2 border-r border-brand-light-active select-none">
+            <button 
+              onClick={() => navigateTo('home')}
+              aria-label="Khám phá khóa học"
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                activeTab === 'home' 
+                  ? 'bg-deep-indigo text-white border-deep-indigo shadow-3xs scale-102 font-black' 
+                  : 'bg-white hover:bg-stone-50 text-stone-650 border-stone-200'
+              }`}
+              title="Khám phá khóa học"
+            >
+              <Compass className={`w-4 h-4 ${activeTab === 'home' ? 'text-white' : 'text-brand-normal'}`} />
+              <span className="hidden lg:inline">Khám phá</span>
+            </button>
+            
+            <button 
+              onClick={() => navigateTo('intro')}
+              aria-label="Giới thiệu MindHub"
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                activeTab === 'intro' 
+                  ? 'bg-deep-indigo text-white border-deep-indigo shadow-3xs scale-102 font-black' 
+                  : 'bg-white hover:bg-stone-50 text-stone-650 border-stone-200'
+              }`}
+              title="Giới thiệu MindHub"
+            >
+              <Sparkles className={`w-4 h-4 ${activeTab === 'intro' ? 'text-white' : 'text-amber-500'}`} />
+              <span className="hidden lg:inline">Giới thiệu</span>
+            </button>
+          </div>
+
           {currentUser.role === 'student' && (
             <>
-              {/* Favorites trigger count - Clickable overlay modal */}
+              {/* Favorites trigger count - Navigate to dedicated favorites page */}
               <button 
-                onClick={() => {
-                  setShowCart(true);
-                }}
-                className="relative p-2 text-deep-indigo hover:text-deep-indigo/90 transition-colors"
-                title="Sản phẩm yêu thích"
+                onClick={() => navigateTo('favorites')}
+                aria-label="Khóa học yêu thích"
+                className={`relative p-2 rounded-xl transition-all cursor-pointer border ${
+                  activeTab === 'favorites' 
+                    ? 'bg-deep-indigo text-white border-deep-indigo shadow-3xs scale-105 font-bold' 
+                    : 'bg-white hover:bg-stone-50 text-stone-750 border-stone-200'
+                }`}
+                title="Khóa học yêu thích"
               >
-                <Heart className={`w-5 h-5 ${favorites.length > 0 ? 'fill-deep-indigo text-deep-indigo' : 'text-stone-500'}`} />
+                <Heart className={`w-4.5 h-4.5 ${activeTab === 'favorites' ? 'fill-white text-white' : favorites.length > 0 ? 'fill-deep-indigo text-deep-indigo' : 'text-stone-500'}`} />
                 {favorites.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-deep-indigo text-white font-mono text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-mono text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold shadow-xs">
                     {favorites.length}
                   </span>
                 )}
@@ -2240,113 +2422,33 @@ export default function App() {
           {/* Help Center icon button trigger */}
           <button 
             onClick={() => setShowLegal('faq')}
-            className="p-2 text-stone-750 hover:text-[#8b5e3c] relative flex items-center justify-center cursor-pointer transition-colors"
+            aria-label="Trung tâm trợ giúp và FAQ"
+            className="p-2 rounded-xl bg-white hover:bg-stone-50 text-stone-750 border border-stone-200 hover:text-[#8b5e3c] relative flex items-center justify-center cursor-pointer transition-all"
             title="Trung tâm Trợ giúp, FAQ và Tài liệu chính sách"
           >
-            <HelpCircle className="w-5 h-5" />
+            <HelpCircle className="w-4.5 h-4.5" />
           </button>
 
-          {/* Notifications tray badge button toggle - Monochrome styled */}
+          {/* Notifications tray badge button toggle - Navigate to dedicated notifications page */}
           <div className="relative">
             <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 text-stone-750 hover:text-black relative"
+              onClick={() => navigateTo('notifications')}
+              aria-label="Thông báo cá nhân"
+              className={`p-2 rounded-xl transition-all cursor-pointer border relative flex items-center justify-center ${
+                activeTab === 'notifications' 
+                  ? 'bg-deep-indigo text-white border-deep-indigo shadow-3xs scale-105 font-bold' 
+                  : 'bg-white hover:bg-stone-50 text-stone-750 border-stone-200 hover:text-black'
+              }`}
               title="Thông báo cá nhân"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-4.5 h-4.5" />
               {notifications.filter(n => {
                 if (!n.targetCourseId || n.targetCourseId === 'all') return true;
                 return enrolledCourseIds.includes(n.targetCourseId);
               }).filter(n => !n.read).length > 0 && (
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-stone-850 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
               )}
             </button>
-
-            {/* Notification drop menu layout */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl shadow-xl border border-brand-light-active p-4 space-y-3 z-50 text-left text-xs animate-fade-in text-main-darker">
-                <div className="flex justify-between items-center border-b border-brand-light-active pb-2">
-                  <span className="font-bold flex items-center gap-1">🔔 Thông báo cá nhân</span>
-                  <button 
-                    onClick={() => {
-                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                      alert('Đã đánh dấu đọc tất cả!');
-                    }}
-                    className="text-[10px] text-brand-normal hover:underline font-semibold"
-                  >
-                    Xem tất cả & Đọc
-                  </button>
-                </div>
-
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {(() => {
-                    const filteredNotifs = notifications.filter(n => {
-                      if (!n.targetCourseId || n.targetCourseId === 'all') return true;
-                      return enrolledCourseIds.includes(n.targetCourseId);
-                    });
-
-                    if (filteredNotifs.length === 0) {
-                      return (
-                        <div className="py-8 text-center text-stone-400 font-bold">
-                          Chưa có thông báo mới nào.
-                        </div>
-                      );
-                    }
-
-                    return filteredNotifs.map((n) => (
-                      <div 
-                        key={n.id} 
-                        className={`p-2.5 rounded-xl text-xs leading-normal relative border ${n.read ? 'bg-white border-brand-light' : 'bg-brand-light/35 border-brand-light-active font-medium'}`}
-                      >
-                        <h4 className="text-[11px] font-bold text-main-normal flex items-center gap-1">
-                          {n.targetCourseId && n.targetCourseId !== 'all' && (
-                            <span className="bg-amber-100 text-amber-900 px-1 py-0.2 rounded text-[8.5px] font-black scale-95 shrink-0 block">LỚP</span>
-                          )}
-                          {n.title}
-                        </h4>
-                        <p className="text-[10.5px] text-gray-500 mt-0.5">{n.message}</p>
-                        <span className="block text-[8px] text-gray-400 mt-1">{n.date}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-
-                {/* Simulated notifications toggle setting switcher */}
-                <div className="border-t border-brand-light-active pt-2 text-[10px] space-y-1 text-gray-400">
-                  <div className="flex justify-between items-center">
-                    <span>Nhận thông báo email</span>
-                    <input 
-                      type="checkbox" 
-                      checked={currentUser.notificationSettings.email}
-                      onChange={(e) => {
-                        const val = e.target.checked;
-                        setCurrentUser(prev => ({
-                          ...prev,
-                          notificationSettings: { ...prev.notificationSettings, email: val }
-                        }));
-                      }}
-                      className="rounded text-brand-normal scale-90"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Nhắc nhở lịch học liên kết</span>
-                    <input 
-                      type="checkbox" 
-                      checked={currentUser.notificationSettings.scheduleReminders}
-                      onChange={(e) => {
-                        const val = e.target.checked;
-                        setCurrentUser(prev => ({
-                          ...prev,
-                          notificationSettings: { ...prev.notificationSettings, scheduleReminders: val }
-                        }));
-                        alert(val ? 'Đã bật nhắc nhở lịch học!' : 'Đã tắt nhắc lịch!');
-                      }}
-                      className="rounded text-brand-normal scale-90"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* User profiles Avatar and Role info */}
@@ -2370,10 +2472,15 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 pl-2 border-l border-brand-light-active shrink-0">
+            <div className="relative flex items-center gap-2 pl-2 border-l border-brand-light-active shrink-0">
               <button 
-                onClick={() => setIsEditingProfile(true)}
-                className="flex items-center gap-2 group text-left cursor-pointer"
+                onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+                aria-label="Menu tài khoản người dùng"
+                className={`flex items-center gap-2 group text-left cursor-pointer p-1.5 rounded-xl transition-all border ${
+                  activeTab === 'profile' || activeTab === 'my-courses'
+                    ? 'bg-stone-100 border-deep-indigo shadow-3xs'
+                    : 'bg-white border-transparent hover:bg-stone-100'
+                }`}
               >
                 <img src={currentUser.avatar} alt="User Avatar" className="w-8 h-8 rounded-full border border-brand-light-active object-cover" />
                 <div className="hidden md:block">
@@ -2382,11 +2489,56 @@ export default function App() {
                 </div>
               </button>
               
+              {showAvatarMenu && (
+                <>
+                  <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowAvatarMenu(false)} />
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-brand-light-active py-2 space-y-1 z-50 text-left text-xs animate-fade-in">
+                    <div className="px-4 py-2 border-b border-stone-100 mb-1 bg-stone-50/50">
+                      <p className="font-bold text-stone-800 text-xs truncate">{currentUser.name}</p>
+                      <p className="text-[10px] text-stone-500 font-mono truncate">{currentUser.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAvatarMenu(false);
+                        navigateTo('my-courses');
+                      }}
+                      className="w-full px-4 py-2 text-left text-stone-700 hover:bg-stone-100 hover:text-brand-normal font-bold flex items-center gap-2 transition-colors cursor-pointer border-none bg-transparent"
+                    >
+                      <BookOpen className="w-4 h-4 text-stone-500 shrink-0" />
+                      <span>Khóa học đã tham gia</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAvatarMenu(false);
+                        navigateTo('profile');
+                      }}
+                      className="w-full px-4 py-2 text-left text-stone-700 hover:bg-stone-100 hover:text-brand-normal font-bold flex items-center gap-2 transition-colors cursor-pointer border-none bg-transparent"
+                    >
+                      <User className="w-4 h-4 text-stone-500 shrink-0" />
+                      <span>Quản lý trang hồ sơ</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAvatarMenu(false);
+                        setShowLogoutConfirm(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-2 transition-colors cursor-pointer border-none bg-transparent"
+                    >
+                      <LogOut className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>Đăng xuất tài khoản</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
               <button 
                 onClick={() => {
                   setShowLogoutConfirm(true);
                 }}
-                className="p-2 text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                className="p-2 text-gray-400 hover:text-red-500 cursor-pointer transition-colors hidden sm:block"
                 title="Đăng xuất tài khoản"
               >
                 <LogOut className="w-4.5 h-4.5" />
@@ -3178,6 +3330,7 @@ export default function App() {
                   type="button" 
                   onClick={() => {
                     setIsLoggedIn(false);
+                    sessionStorage.removeItem('mindhub_welcome_shown');
                     // Reset to visitor Guest user representation
                     setCurrentUser({
                       id: 'u-guest',
@@ -3524,24 +3677,8 @@ export default function App() {
         ) : (
           /* --- STUDENT PERSPECTIVE (PRIMARY INTERACTIVITIES) --- */
           <div className="space-y-8 text-sm text-left animate-fade-in pb-12">
-            
-            {/* Page Tabs Navigation (Trang Chủ vs Trang Giới Thiệu) */}
-            <div className="flex border-b border-mist gap-6 select-none font-sans sticky top-[72px] bg-[#fbf9f6]/95 backdrop-blur-md z-30 pt-3 pb-0 px-4 md:px-6">
-              <button 
-                onClick={() => setActiveTab('home')}
-                className={`pb-3 -mb-[1px] text-[13px] md:text-sm font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${activeTab === 'home' ? 'border-deep-indigo text-deep-ink font-black' : 'border-transparent text-stone-400 hover:text-stone-750'}`}
-              >
-                <span>Khám Phá Khóa Học</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('intro')}
-                className={`pb-3 -mb-[1px] text-[13px] md:text-sm font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${activeTab === 'intro' ? 'border-deep-indigo text-deep-ink font-black' : 'border-transparent text-stone-400 hover:text-stone-750'}`}
-              >
-                <span>Giới Thiệu MindHub</span>
-              </button>
-            </div>
 
-            {activeTab === 'home' ? (
+            {activeTab === 'home' && (
               <>
                 {/* Elegant Header & Current Courses Side-by-Side Layout */}
                 <div className="flex flex-col lg:flex-row gap-6 items-stretch w-full">
@@ -3557,41 +3694,129 @@ export default function App() {
                         </span>
                       </div>
 
-                      {courses.filter(c => enrolledCourseIds.includes(c.id)).length === 0 ? (
-                        <div className="text-center py-6 text-stone-400 bg-white border border-dashed border-stone-200 rounded-2xl">
-                          <p className="text-xs font-medium">Bạn chưa bắt đầu khóa học nào. Khám phá các khóa học bên dưới để bắt đầu học ngay!</p>
+                      {!courses || !Array.isArray(courses) ? (
+                        <div className="text-center py-12 text-stone-400 bg-white border border-brand-light-active rounded-3xl animate-pulse">
+                          <p className="text-xs font-bold">Đang tải dữ liệu khóa học đã tham gia...</p>
+                        </div>
+                      ) : courses.filter(c => c && Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id)).length === 0 ? (
+                        <div className="text-center py-12 text-stone-400 bg-white border border-dashed border-stone-300 rounded-3xl shadow-3xs p-8 space-y-3">
+                          <BookOpen className="w-10 h-10 text-stone-300 mx-auto" />
+                          <p className="text-sm font-bold text-stone-600">Bạn chưa tham gia khóa học nào</p>
+                          <p className="text-xs font-medium text-stone-400 max-w-md mx-auto">Hãy khám phá các khóa học tinh hoa trong danh sách bên dưới và đăng ký để bắt đầu hành trình chinh phục tri thức ngay hôm nay!</p>
+                          <div className="pt-2">
+                            <button 
+                              onClick={() => {
+                                const el = document.getElementById('available-courses-section');
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }}
+                              className="px-5 py-2.5 bg-deep-indigo hover:bg-midnight-teal text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer border-none"
+                            >
+                              Khám phá khóa học ngay
+                            </button>
+                          </div>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                          {courses.filter(c => enrolledCourseIds.includes(c.id)).map(c => (
-                            <div key={c.id} className="border border-brand-light-active rounded-2xl p-4 bg-white flex flex-col justify-between hover-glow-card transition-all text-left space-y-3">
-                              <div className="flex gap-3">
-                                <img src={c.image} alt="Avatar" className="w-14 h-10 object-cover rounded-lg shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                  <span className="text-[8px] bg-[#f5ece3] text-[#432c28] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Đang học</span>
-                                  <h4 className="font-bold text-xs text-main-normal truncate mt-0.5">{c.title}</h4>
-                                  <p className="text-[9px] text-gray-400 mt-0.5 truncate">{c.instructorName}</p>
-                                </div>
-                              </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
+                          {(() => {
+                            const enrolledList = courses.filter(c => c && Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id)).sort((a, b) => {
+                              const timeA = (a as any).lastAccessedAt || (a as any).updatedAt || (a as any).enrolledAt || a.createdAt || '';
+                              const timeB = (b as any).lastAccessedAt || (b as any).updatedAt || (b as any).enrolledAt || b.createdAt || '';
+                              return timeB.localeCompare(timeA);
+                            });
+                            const topRecent = enrolledList.slice(0, 7);
 
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-[10px] text-gray-400">
-                                  <span>Tiến độ:</span>
-                                  <span className="font-bold text-brand-dark">{c.completionRate || 60}%</span>
-                                </div>
-                                <div className="w-full bg-[#f5ece3] h-1.5 rounded-full overflow-hidden">
-                                  <div className="bg-brand-normal h-full animate-progress-fluid" style={{ width: `${c.completionRate || 60}%` }}></div>
-                                </div>
-                              </div>
+                            return (
+                              <>
+                                {topRecent.map(c => {
+                                  const compRate = c.completionRate || 60;
+                                  const totalLessons = c.chapters?.reduce((acc, ch) => acc + ch.lessons.length, 0) || 12;
+                                  const completedLessons = Math.round((compRate / 100) * totalLessons);
+                                  let statusLabel = "Đang học";
+                                  let badgeClass = "bg-amber-150 text-amber-950";
+                                  if (compRate === 0) {
+                                    statusLabel = "Chưa bắt đầu";
+                                    badgeClass = "bg-stone-200 text-stone-800";
+                                  } else if (compRate === 100) {
+                                    statusLabel = "Hoàn thành";
+                                    badgeClass = "bg-emerald-150 text-emerald-950";
+                                  } else if (c.status === 'rejected') {
+                                    statusLabel = "Tạm khóa";
+                                    badgeClass = "bg-rose-150 text-rose-950";
+                                  }
 
-                              <button 
-                                onClick={() => setStudyingCourse(c)}
-                                className="w-full bg-[#432c28] hover:bg-brand-darker text-brand-light py-1.5 rounded-lg text-[10px] font-bold transition-all text-center block cursor-pointer"
-                              >
-                                Vào lớp học ngay »
-                              </button>
-                            </div>
-                          ))}
+                                  return (
+                                    <div 
+                                      key={c.id} 
+                                      className="border border-brand-light-active bg-white rounded-3xl overflow-hidden flex flex-col justify-between hover-glow-card transition-all duration-300 text-left shadow-xs"
+                                    >
+                                      <div className="relative">
+                                        <img src={c.image} alt="Course banner" className="w-full h-36 object-cover" />
+                                        <div className="absolute top-2 left-2">
+                                          <span className={`text-[9px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider shadow-sm ${badgeClass}`}>
+                                            {statusLabel}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <div className="p-4 space-y-4 flex-1 flex flex-col justify-between">
+                                        <div>
+                                          <span className="text-[10px] text-gray-500 block uppercase font-mono tracking-wider font-semibold">{c.subcategory}</span>
+                                          <h4 className="text-[14px] font-bold text-main-darker leading-snug line-clamp-2 hover:text-brand-normal cursor-pointer mt-1" onClick={() => setViewedCourse(c)}>
+                                            {c.title}
+                                          </h4>
+                                          <p className="text-[11px] text-stone-500 mt-1 italic">Giảng viên: {c.instructorName}</p>
+                                        </div>
+
+                                        <div className="space-y-1.5 bg-stone-50 p-2.5 rounded-2xl border border-stone-150">
+                                          <div className="flex justify-between text-[10px] text-stone-600 font-semibold">
+                                            <span>Tiến độ:</span>
+                                            <span className="font-bold text-brand-normal font-mono">{compRate}% ({completedLessons}/{totalLessons})</span>
+                                          </div>
+                                          <div className="w-full bg-stone-200 h-2 rounded-full overflow-hidden border border-stone-300">
+                                            <div className="bg-brand-normal h-full animate-progress-fluid" style={{ width: `${compRate}%` }}></div>
+                                          </div>
+                                        </div>
+
+                                        <div className="border-t border-stone-100 pt-3 flex items-center justify-between gap-1.5">
+                                          <button 
+                                            onClick={() => setViewedCourse(c)}
+                                            className="flex-1 bg-[#f5ece3] hover:bg-[#dbcdc3] text-brand-dark text-[10.5px] font-bold py-2 px-2 rounded-xl transition-all cursor-pointer text-center whitespace-nowrap border-none"
+                                          >
+                                            Chi tiết
+                                          </button>
+                                          <button 
+                                            onClick={() => setStudyingCourse(c)}
+                                            className="flex-1 bg-brand-normal hover:bg-brand-hover text-white text-[10.5px] font-bold py-2 px-2 rounded-xl transition-all cursor-pointer text-center whitespace-nowrap shadow-sm border-none"
+                                          >
+                                            Tiếp tục học »
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+
+                                {/* Box 8: Xem tất cả action card */}
+                                <div 
+                                  onClick={() => navigateTo('my-courses')}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label="Xem tất cả danh sách khóa học đã tham gia"
+                                  className="border border-dashed border-stone-300 bg-stone-50/60 hover:bg-[#faf6f2] rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer group transition-all duration-300 shadow-3xs hover:border-[#8b5e3c]"
+                                >
+                                  <div className="w-12 h-12 rounded-full bg-white border border-stone-250 group-hover:border-[#8b5e3c] flex items-center justify-center text-[#8b5e3c] font-black text-xl mb-3 shadow-xs group-hover:scale-110 transition-transform">
+                                    ...
+                                  </div>
+                                  <h4 className="text-xs font-bold text-stone-750 group-hover:text-[#8b5e3c] uppercase tracking-wider mb-1">
+                                    Xem tất cả ({enrolledList.length})
+                                  </h4>
+                                  <p className="text-[11px] text-stone-500 max-w-[150px]">
+                                    Chuyển đến trang quản lý toàn bộ khóa học đã tham gia
+                                  </p>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -3711,22 +3936,41 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* Right: Sort dropdown */}
-                    <div className="flex items-center gap-2 text-xs w-full lg:w-auto justify-end shrink-0">
-                      <ArrowUpDown className="w-4 h-4 text-gray-450" />
-                      <span className="text-gray-400 font-medium">Sắp xếp theo:</span>
-                      <select 
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="border border-brand-light-active rounded-xl px-3 py-2 bg-white focus:outline-none text-[11px] font-medium text-stone-750"
-                      >
-                        <option value="newest">Khóa học mới nhất</option>
-                        <option value="rating">Đánh giá tốt nhất</option>
-                        <option value="bestseller">Bán chạy nhất</option>
-                        <option value="priceAsc">Giá tăng dần</option>
-                        <option value="priceDesc">Giá giảm dần</option>
-                        <option value="oldest">Khóa học cũ nhất</option>
-                      </select>
+                    {/* Right: Purchase Filter & Sort dropdown */}
+                    <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end shrink-0">
+                      {/* Trạng thái mua */}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-gray-400 font-medium whitespace-nowrap">Trạng thái mua:</span>
+                        <select
+                          value={coursePurchaseFilter}
+                          onChange={(e) => setCoursePurchaseFilter(e.target.value as any)}
+                          aria-label="Bộ lọc trạng thái mua khóa học"
+                          className="border border-stone-250 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-deep-indigo text-xs font-bold text-stone-750 shadow-3xs cursor-pointer hover:border-stone-300 transition-all"
+                        >
+                          <option value="all">Tất cả</option>
+                          <option value="unpurchased">Chưa mua</option>
+                          <option value="purchased">Đã mua</option>
+                        </select>
+                      </div>
+
+                      {/* Sắp xếp theo */}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <ArrowUpDown className="w-4 h-4 text-gray-450" />
+                        <span className="text-gray-400 font-medium whitespace-nowrap">Sắp xếp theo:</span>
+                        <select 
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as any)}
+                          aria-label="Bộ lọc sắp xếp khóa học"
+                          className="border border-stone-250 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-deep-indigo text-xs font-bold text-stone-750 shadow-3xs cursor-pointer hover:border-stone-300 transition-all"
+                        >
+                          <option value="newest">Khóa học mới nhất</option>
+                          <option value="rating">Đánh giá tốt nhất</option>
+                          <option value="bestseller">Bán chạy nhất</option>
+                          <option value="priceAsc">Giá tăng dần</option>
+                          <option value="priceDesc">Giá giảm dần</option>
+                          <option value="oldest">Khóa học cũ nhất</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
 
@@ -3783,8 +4027,37 @@ export default function App() {
 
                 {/* Course grid with 4 columns on large screen */}
                 {paginatedCourses.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400 bg-white border border-dashed rounded-2xl">
-                    <p className="font-semibold">Không tìm thấy khóa học nào phù hợp với yêu cầu tìm kiếm của bạn.</p>
+                  <div className="text-center py-12 text-gray-400 bg-white border border-dashed rounded-2xl space-y-3 p-6">
+                    {coursePurchaseFilter === 'purchased' ? (
+                      <>
+                        <p className="font-semibold text-stone-600 text-sm">Bạn chưa mua hoặc chưa đăng ký khóa học nào trong danh mục này.</p>
+                        <p className="text-xs text-stone-400">Hãy chuyển bộ lọc sang "Tất cả" hoặc "Chưa mua" để khám phá các khóa học chất lượng cao của chúng tôi!</p>
+                        <button
+                          onClick={() => setCoursePurchaseFilter('all')}
+                          className="mt-2 px-5 py-2 bg-brand-normal hover:bg-brand-hover text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer border-none"
+                        >
+                          Khám phá khóa học ngay
+                        </button>
+                      </>
+                    ) : coursePurchaseFilter === 'unpurchased' ? (
+                      <>
+                        <p className="font-semibold text-stone-600 text-sm">Không còn khóa học nào chưa mua phù hợp với tiêu chí lọc của bạn.</p>
+                        <p className="text-xs text-stone-400">Bạn đã sở hữu toàn bộ khóa học trong danh mục này hoặc bộ lọc tìm kiếm chưa trùng khớp.</p>
+                        <button
+                          onClick={() => {
+                            setSearchQuery('');
+                            setSelectedCategory('All');
+                            setSelectedSubcategory('All');
+                            setCoursePurchaseFilter('all');
+                          }}
+                          className="mt-2 px-5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-xl transition-all cursor-pointer border border-stone-300"
+                        >
+                          Xóa toàn bộ bộ lọc
+                        </button>
+                      </>
+                    ) : (
+                      <p className="font-semibold text-stone-500">Không tìm thấy khóa học nào phù hợp với yêu cầu tìm kiếm của bạn.</p>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -3942,30 +4215,43 @@ export default function App() {
             {/* SECTION 2: TOP KHÓA HỌC ĐƯỢC YÊU THÍCH NHẤT */}
             <ScrollReveal delayMs={150}>
               <div className="bg-[#fcfcfc] border border-stone-150 rounded-3xl p-5 md:p-6 space-y-4 shadow-3xs">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-stone-100 pb-3">
-                  <div className="space-y-0.5">
-                    <h3 className="text-base md:text-lg font-extrabold flex items-center gap-2 text-[#432c28]">
-                      <Heart className="w-5 h-5 fill-deep-indigo text-deep-indigo" /> Top Khóa Học Được Yêu Thích Nhất
-                    </h3>
-                    <p className="text-[10.5px] text-stone-500">
-                      Những khóa học học thuật đỉnh cao thu hút đông đảo lượng quan tâm thảo luận nhất tuần qua.
-                    </p>
-                  </div>
+                {(() => {
+                  const rankingOptions = [
+                    { value: 'favoritesDesc', label: 'Yêu thích nhiều nhất', title: 'Xếp hạng khóa học theo Yêu thích nhiều nhất' },
+                    { value: 'ratingDesc', label: 'Đánh giá tốt nhất', title: 'Xếp hạng khóa học theo Đánh giá tốt nhất' },
+                    { value: 'priceAsc', label: 'Giá thấp nhất', title: 'Xếp hạng khóa học theo Giá thấp nhất' },
+                  ];
+                  const currentOption = rankingOptions.find(o => o.value === favSortBy);
+                  const dynamicTitle = currentOption ? currentOption.title : 'Xếp hạng khóa học';
 
-                  {/* Sort favorites controls */}
-                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                    <span className="text-[10.5px] text-stone-400 font-bold">Sắp xếp:</span>
-                    <select
-                      value={favSortBy}
-                      onChange={(e) => setFavSortBy(e.target.value as any)}
-                      className="border border-stone-200 rounded-lg px-2 py-1 bg-white focus:outline-none text-[10.5px] font-bold text-stone-700 shadow-3xs"
-                    >
-                      <option value="favoritesDesc">Yêu thích nhiều nhất</option>
-                      <option value="ratingDesc">Đánh giá tốt nhất</option>
-                      <option value="priceAsc">Giá thấp nhất</option>
-                    </select>
-                  </div>
-                </div>
+                  return (
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-stone-100 pb-3">
+                      <div className="space-y-0.5">
+                        <h3 className="text-base md:text-lg font-extrabold flex items-center gap-2 text-[#432c28]">
+                          <Heart className="w-5 h-5 fill-deep-indigo text-deep-indigo" /> {dynamicTitle}
+                        </h3>
+                        <p className="text-[10.5px] text-stone-500">
+                          Những khóa học học thuật đỉnh cao thu hút đông đảo lượng quan tâm thảo luận nhất tuần qua.
+                        </p>
+                      </div>
+
+                      {/* Sort favorites controls */}
+                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                        <span className="text-[10.5px] text-stone-400 font-bold">Sắp xếp:</span>
+                        <select
+                          value={favSortBy}
+                          onChange={(e) => setFavSortBy(e.target.value as any)}
+                          aria-label="Bộ lọc xếp hạng khóa học"
+                          className="border border-stone-250 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-deep-indigo text-xs font-bold text-stone-750 shadow-3xs cursor-pointer hover:border-stone-300 transition-all"
+                        >
+                          {rankingOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Grid of Top Favorited Courses */}
                 {(() => {
@@ -4057,7 +4343,9 @@ export default function App() {
             </ScrollReveal>
 
           </>
-        ) : (
+        )}
+
+        {activeTab === 'intro' && (
           /* --- INTRODUCTION TAB VIEW --- */
           <div className="space-y-10 text-sm text-left animate-fade-in pb-12">
             {/* Intro Hero Section with Stats */}
@@ -4418,6 +4706,8 @@ export default function App() {
           </div>
         )}
 
+        {(activeTab === 'home' || activeTab === 'intro') && (
+          <>
             {/* 👨‍🏫 INSTRUCTORS SHOWCASE: VIEW, FILTER, FEATURED */}
             <ScrollReveal delayMs={180}>
               <div className="space-y-5 border-t border-brand-light-active pt-6 mt-6">
@@ -4442,7 +4732,7 @@ export default function App() {
                       <select
                         value={instructorCategory}
                         onChange={(e) => setInstructorCategory(e.target.value)}
-                        className="border border-brand-light-active rounded-xl px-2.5 py-1.5 bg-white focus:outline-none text-[11px] text-stone-700 font-medium"
+                        className="border border-stone-250 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-deep-indigo text-xs font-bold text-stone-750 shadow-3xs cursor-pointer hover:border-stone-300 transition-all"
                       >
                         <option value="All">Tất cả lĩnh vực</option>
                         <option value="Artificial Intelligence">Trí tuệ nhân tạo (AI)</option>
@@ -4581,40 +4871,25 @@ export default function App() {
                       <BookOpen className="w-5 h-5 text-[#8b5e3c]" /> Khóa học đã mua gần đây
                     </h3>
                     <p className="text-[11px] text-stone-500">
-                      Hiển thị danh sách khóa học bạn sở hữu dựa trên mốc thời gian mua hàng.
+                      Hiển thị danh sách khóa học bạn sở hữu dựa trên mốc thời gian mua hàng gần nhất.
                     </p>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
-                    <span className="text-[10.5px] text-stone-500 font-bold">Lọc thời gian mua:</span>
-                    <select
-                      value={recentPurchasedFilter}
-                      onChange={(e) => setRecentPurchasedFilter(e.target.value as any)}
-                      className="border border-stone-200 rounded-xl px-2.5 py-1.5 bg-white focus:outline-none text-[10.5px] font-bold text-stone-700 shadow-3xs"
-                    >
-                      <option value="all">Toàn bộ thời gian ({courses.filter(c => enrolledCourseIds.includes(c.id)).length})</option>
-                      <option value="1_week">Trong vòng 1 tuần</option>
-                      <option value="2_weeks">Trong vòng 2 tuần</option>
-                      <option value="3_weeks">Trong vòng 3 tuần</option>
-                      <option value="1_month">Trong vòng 1 tháng</option>
-                    </select>
                   </div>
                 </div>
 
                 {(() => {
-                  const filteredEnrolledCourses = courses.filter(c => enrolledCourseIds.includes(c.id)).filter(c => {
-                    if (recentPurchasedFilter === 'all') return true;
-                    const pDate = getCoursePurchaseDate(c.id);
-                    const diffMs = new Date().getTime() - pDate.getTime();
-                    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-                    if (recentPurchasedFilter === '1_week') return diffDays <= 7;
-                    if (recentPurchasedFilter === '2_weeks') return diffDays <= 14;
-                    if (recentPurchasedFilter === '3_weeks') return diffDays <= 21;
-                    if (recentPurchasedFilter === '1_month') return diffDays <= 30;
-                    return true;
-                  });
+                  const recentEnrolledCourses = courses
+                    .filter(c => Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id))
+                    .sort((a, b) => {
+                      const dateA = getCoursePurchaseDate(a.id).getTime();
+                      const dateB = getCoursePurchaseDate(b.id).getTime();
+                      if (dateB !== dateA) return dateB - dateA;
+                      if (a.createdAt && b.createdAt) {
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                      }
+                      return b.id.localeCompare(a.id);
+                    });
 
-                  if (enrolledCourseIds.length === 0) {
+                  if (enrolledCourseIds.length === 0 || recentEnrolledCourses.length === 0) {
                     return (
                       <div className="text-center py-8 text-stone-400 bg-white border border-dashed border-stone-200 rounded-2xl">
                         <p className="text-xs font-medium">Bạn chưa sở hữu khóa học nào. Hãy khám phá các khóa học chất lượng cao của chúng tôi dưới đây!</p>
@@ -4622,18 +4897,9 @@ export default function App() {
                     );
                   }
 
-                  if (filteredEnrolledCourses.length === 0) {
-                    return (
-                      <div className="text-center py-10 text-stone-400 bg-white border border-dashed border-stone-200 rounded-2xl flex flex-col items-center justify-center space-y-1">
-                        <p className="text-xs font-semibold text-stone-500">Không tìm thấy khóa học nào đã mua trong khoảng thời gian này.</p>
-                        <p className="text-[10.5px] text-stone-400">Thử thay đổi bộ lọc thời gian để hiển thị đầy đủ hơn.</p>
-                      </div>
-                    );
-                  }
-
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {filteredEnrolledCourses.map(c => {
+                      {recentEnrolledCourses.map(c => {
                         const purchaseDate = getCoursePurchaseDate(c.id);
                         return (
                           <div key={c.id} className="bg-white border border-stone-150 rounded-2xl p-4 flex flex-col justify-between hover:shadow-md transition-all text-left space-y-3 relative">
@@ -4999,6 +5265,1075 @@ export default function App() {
                 </div>
               </div>
             )}
+          </>
+        )}
+
+        {/* --- DEDICATED MY COURSES PAGE --- */}
+        {activeTab === 'my-courses' && (
+          <div className="space-y-6 text-sm text-left animate-fade-in px-4 md:px-8 py-6 max-w-7xl mx-auto">
+            <div className="border-b border-brand-light-active pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs text-stone-500 mb-1">
+                  <span className="cursor-pointer hover:underline" onClick={() => navigateTo('home')}>Trang chủ</span>
+                  <span>/</span>
+                  <span className="text-stone-700 font-bold">Khóa học đã tham gia</span>
+                </div>
+                <h2 className="text-xl md:text-2xl font-display font-black text-main-darker flex items-center gap-2">
+                  <BookOpen className="w-6 h-6 text-brand-normal" /> Danh Sách Khóa Học Đã Tham Gia
+                </h2>
+                <p className="text-xs text-stone-500 mt-1">
+                  Quản lý và theo dõi toàn bộ tiến trình các khóa học bạn đang tham gia trên hệ thống.
+                </p>
+              </div>
+              <span className="text-xs bg-[#f5ece3] text-[#8b5e3c] font-bold px-3 py-1.5 rounded-xl border border-[#eedecf] shadow-3xs">
+                Tổng cộng: {Array.isArray(courses) ? courses.filter(c => c && Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id)).length : 0} khóa học
+              </span>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="bg-white border border-stone-250 rounded-3xl p-5 shadow-3xs space-y-4">
+              <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-3 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={myCoursesSearch}
+                    onChange={(e) => {
+                      setMyCoursesSearch(e.target.value);
+                      setMyCoursesPage(1);
+                    }}
+                    placeholder="Tìm theo tên khóa học, giảng viên, danh mục..."
+                    className="w-full text-xs pl-10 pr-4 py-2.5 bg-stone-50 hover:bg-stone-50/70 border border-stone-250 rounded-xl focus:bg-white focus:ring-1 focus:ring-deep-indigo focus:border-deep-indigo focus:outline-none transition-all"
+                  />
+                  {myCoursesSearch && (
+                    <button 
+                      onClick={() => { setMyCoursesSearch(''); setMyCoursesPage(1); }}
+                      className="absolute right-3 top-3 text-[10px] text-stone-400 hover:text-stone-700 font-bold border-none bg-transparent"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Additional Filters: Status & Sort */}
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-stone-500 font-bold">Trạng thái:</span>
+                    <select
+                      value={myCoursesStatus}
+                      onChange={(e) => { setMyCoursesStatus(e.target.value); setMyCoursesPage(1); }}
+                      className="border border-stone-250 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-deep-indigo text-xs font-bold text-stone-750 shadow-3xs cursor-pointer hover:border-stone-300 transition-all"
+                    >
+                      <option value="All">Tất cả trạng thái</option>
+                      <option value="not_started">Chưa bắt đầu (0%)</option>
+                      <option value="in_progress">Đang học (1% - 99%)</option>
+                      <option value="completed">Hoàn thành (100%)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-stone-500 font-bold">Sắp xếp:</span>
+                    <select
+                      value={myCoursesSort}
+                      onChange={(e) => { setMyCoursesSort(e.target.value); setMyCoursesPage(1); }}
+                      className="border border-stone-250 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-deep-indigo text-xs font-bold text-stone-750 shadow-3xs cursor-pointer hover:border-stone-300 transition-all"
+                    >
+                      <option value="recent">Học gần đây nhất</option>
+                      <option value="newest">Mới tham gia nhất</option>
+                      <option value="progress">Tiến độ cao nhất</option>
+                      <option value="alpha">Tên A–Z</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parent - Child Category Filter */}
+              <div className="border-t border-stone-100 pt-4 space-y-3">
+                {/* Parent Category */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider select-none shrink-0 mr-1">Danh mục cha:</span>
+                  <div className="flex flex-wrap gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                    {categoriesList.map((cat) => (
+                      <button 
+                        key={cat}
+                        onClick={() => {
+                          setMyCoursesParentCat(cat);
+                          setMyCoursesChildCat('All');
+                          setMyCoursesPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${myCoursesParentCat === cat ? 'bg-deep-indigo text-white shadow-xs scale-102 font-bold' : 'bg-stone-100 hover:bg-stone-200 text-stone-600'}`}
+                      >
+                        {cat === 'All' ? 'Tất cả danh mục' : cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Child Category */}
+                {(() => {
+                  if (!Array.isArray(courses)) return null;
+                  const childSubs = myCoursesParentCat === 'All' 
+                    ? Array.from(new Set(courses.map(c => c?.subcategory).filter(Boolean)))
+                    : Array.from(new Set(courses.filter(c => c && c.category === myCoursesParentCat).map(c => c?.subcategory).filter(Boolean)));
+                  
+                  if (childSubs.length === 0) return null;
+
+                  return (
+                    <div className="flex flex-wrap items-center gap-2 bg-[#fdfcfb] border border-stone-150/60 p-2.5 rounded-2xl pl-4 animate-fade-in">
+                      <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider select-none shrink-0 mr-1 flex items-center gap-1">
+                        <Layers className="w-3.5 h-3.5 text-[#8b5e3c]" /> Danh mục con:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 overflow-x-auto no-scrollbar">
+                        <button 
+                          onClick={() => { setMyCoursesChildCat('All'); setMyCoursesPage(1); }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${myCoursesChildCat === 'All' ? 'bg-[#8b5e3c] text-white shadow-3xs font-bold' : 'bg-stone-50 border border-stone-200/50 hover:bg-stone-100 text-stone-550'}`}
+                        >
+                          Tất cả danh mục con
+                        </button>
+                        
+                        {childSubs.map((sub) => (
+                          <button 
+                            key={sub}
+                            onClick={() => { setMyCoursesChildCat(sub); setMyCoursesPage(1); }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${myCoursesChildCat === sub ? 'bg-[#8b5e3c] text-white shadow-3xs font-bold' : 'bg-stone-50 border border-stone-200/50 hover:bg-stone-100 text-stone-550'}`}
+                          >
+                            {sub}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Course Grid and Pagination */}
+            {(() => {
+              const allEnrolled = Array.isArray(courses) ? courses.filter(c => c && Array.isArray(enrolledCourseIds) && enrolledCourseIds.includes(c.id)) : [];
+              if (allEnrolled.length === 0) {
+                return (
+                  <div className="text-center py-16 text-stone-400 bg-white border border-dashed border-stone-300 rounded-3xl shadow-3xs p-8 space-y-4">
+                    <BookOpen className="w-12 h-12 text-stone-300 mx-auto" />
+                    <p className="text-base font-bold text-stone-700">Bạn chưa tham gia khóa học nào</p>
+                    <p className="text-xs font-medium text-stone-500 max-w-md mx-auto">Hãy khám phá các khóa học tinh hoa trên hệ thống và đăng ký để bắt đầu hành trình học tập ngay hôm nay!</p>
+                    <div className="pt-2">
+                      <button 
+                        onClick={() => navigateTo('home')}
+                        className="px-6 py-3 bg-deep-indigo hover:bg-midnight-teal text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer border-none"
+                      >
+                        Khám phá khóa học ngay
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              const filtered = allEnrolled.filter(c => {
+                // Search filter
+                if (myCoursesSearch.trim()) {
+                  const q = myCoursesSearch.toLowerCase();
+                  const matchTitle = c.title.toLowerCase().includes(q);
+                  const matchInst = c.instructorName.toLowerCase().includes(q);
+                  const matchCat = c.category.toLowerCase().includes(q) || c.subcategory.toLowerCase().includes(q);
+                  if (!matchTitle && !matchInst && !matchCat) return false;
+                }
+                // Parent category filter
+                if (myCoursesParentCat !== 'All' && c.category !== myCoursesParentCat) return false;
+                // Child category filter
+                if (myCoursesChildCat !== 'All' && c.subcategory !== myCoursesChildCat) return false;
+                // Status filter
+                const compRate = c.completionRate || 60;
+                if (myCoursesStatus === 'not_started' && compRate > 0) return false;
+                if (myCoursesStatus === 'in_progress' && (compRate === 0 || compRate === 100)) return false;
+                if (myCoursesStatus === 'completed' && compRate < 100) return false;
+                return true;
+              }).sort((a, b) => {
+                if (myCoursesSort === 'recent' || myCoursesSort === 'newest') {
+                  const timeA = (a as any).lastAccessedAt || (a as any).updatedAt || (a as any).enrolledAt || a.createdAt || '';
+                  const timeB = (b as any).lastAccessedAt || (b as any).updatedAt || (b as any).enrolledAt || b.createdAt || '';
+                  return myCoursesSort === 'recent' ? timeB.localeCompare(timeA) : timeA.localeCompare(timeB);
+                }
+                if (myCoursesSort === 'progress') {
+                  const pA = a.completionRate || 60;
+                  const pB = b.completionRate || 60;
+                  return pB - pA;
+                }
+                if (myCoursesSort === 'alpha') {
+                  return a.title.localeCompare(b.title);
+                }
+                return 0;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-16 text-stone-400 bg-white border border-dashed border-stone-300 rounded-3xl shadow-3xs p-8 space-y-3">
+                    <Search className="w-12 h-12 text-stone-300 mx-auto" />
+                    <p className="text-base font-bold text-stone-700">Không tìm thấy khóa học phù hợp</p>
+                    <p className="text-xs font-medium text-stone-500 max-w-md mx-auto">Không có khóa học nào khớp với bộ lọc hoặc từ khóa tìm kiếm hiện tại. Vui lòng thử lại với các tiêu chí khác.</p>
+                    <button 
+                      onClick={() => {
+                        setMyCoursesSearch('');
+                        setMyCoursesParentCat('All');
+                        setMyCoursesChildCat('All');
+                        setMyCoursesStatus('All');
+                        setMyCoursesSort('recent');
+                        setMyCoursesPage(1);
+                      }}
+                      className="mt-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-xl transition-all cursor-pointer border-none"
+                    >
+                      Xóa bộ lọc
+                    </button>
+                  </div>
+                );
+              }
+
+              const itemsPerPage = 12;
+              const totalPages = Math.ceil(filtered.length / itemsPerPage);
+              const safePage = Math.min(myCoursesPage, totalPages);
+              const startIndex = (safePage - 1) * itemsPerPage;
+              const paginatedList = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+              return (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {paginatedList.map(c => {
+                      const compRate = c.completionRate || 60;
+                      const totalLessons = c.chapters?.reduce((acc, ch) => acc + ch.lessons.length, 0) || 12;
+                      const completedLessons = Math.round((compRate / 100) * totalLessons);
+                      let statusLabel = "Đang học";
+                      let badgeClass = "bg-amber-150 text-amber-950";
+                      if (compRate === 0) {
+                        statusLabel = "Chưa bắt đầu";
+                        badgeClass = "bg-stone-200 text-stone-800";
+                      } else if (compRate === 100) {
+                        statusLabel = "Hoàn thành";
+                        badgeClass = "bg-emerald-150 text-emerald-950";
+                      } else if (c.status === 'rejected') {
+                        statusLabel = "Tạm khóa";
+                        badgeClass = "bg-rose-150 text-rose-950";
+                      }
+
+                      return (
+                        <div 
+                          key={c.id} 
+                          className="border border-brand-light-active bg-white rounded-3xl overflow-hidden flex flex-col justify-between hover-glow-card transition-all duration-300 text-left shadow-xs"
+                        >
+                          <div className="relative">
+                            <img src={c.image} alt="Course banner" className="w-full h-40 object-cover" />
+                            <div className="absolute top-2 left-2">
+                              <span className={`text-[9px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider shadow-sm ${badgeClass}`}>
+                                {statusLabel}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+                            <div>
+                              <span className="text-[10px] text-gray-500 block uppercase font-mono tracking-wider font-semibold">{c.subcategory}</span>
+                              <h4 className="text-[15px] font-bold text-main-darker leading-snug line-clamp-2 hover:text-brand-normal cursor-pointer mt-1" onClick={() => setViewedCourse(c)}>
+                                {c.title}
+                              </h4>
+                              <p className="text-[11px] text-stone-500 mt-1 italic">Giảng viên: {c.instructorName}</p>
+                            </div>
+
+                            <div className="space-y-1.5 bg-stone-50 p-3 rounded-2xl border border-stone-150">
+                              <div className="flex justify-between text-[10px] text-stone-600 font-semibold">
+                                <span>Tiến độ học tập:</span>
+                                <span className="font-bold text-brand-normal font-mono">{compRate}% ({completedLessons}/{totalLessons} bài)</span>
+                              </div>
+                              <div className="w-full bg-stone-200 h-2 rounded-full overflow-hidden border border-stone-300">
+                                <div className="bg-brand-normal h-full animate-progress-fluid" style={{ width: `${compRate}%` }}></div>
+                              </div>
+                            </div>
+
+                            <div className="border-t border-stone-100 pt-3 flex items-center justify-between gap-2">
+                              <button 
+                                onClick={() => setViewedCourse(c)}
+                                className="flex-1 bg-[#f5ece3] hover:bg-[#dbcdc3] text-brand-dark text-[11px] font-bold py-2.5 px-3 rounded-xl transition-all cursor-pointer text-center whitespace-nowrap border-none"
+                              >
+                                Chi tiết
+                              </button>
+                              <button 
+                                onClick={() => setStudyingCourse(c)}
+                                className="flex-1 bg-brand-normal hover:bg-brand-hover text-white text-[11px] font-bold py-2.5 px-3 rounded-xl transition-all cursor-pointer text-center whitespace-nowrap shadow-sm border-none"
+                              >
+                                Tiếp tục học »
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 pt-6 pb-2">
+                      <button
+                        onClick={() => setMyCoursesPage(prev => Math.max(1, prev - 1))}
+                        disabled={safePage === 1}
+                        className="p-2 rounded-xl border border-brand-light-active bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer"
+                        title="Trang trước"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        {Array.from({ length: totalPages }).map((_, idx) => {
+                          const pageNum = idx + 1;
+                          const isCurrent = pageNum === safePage;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setMyCoursesPage(pageNum)}
+                              className={`w-8.5 h-8.5 text-xs font-bold rounded-xl transition-all border cursor-pointer ${
+                                isCurrent
+                                  ? 'bg-deep-indigo text-white border-deep-indigo shadow-xs scale-105'
+                                  : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50 hover:border-stone-300'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        onClick={() => setMyCoursesPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={safePage === totalPages}
+                        className="p-2 rounded-xl border border-brand-light-active bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:hover:bg-white transition-all cursor-pointer"
+                        title="Trang sau"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* --- 1. DEDICATED FAVORITES PAGE --- */}
+        {activeTab === 'favorites' && (
+          <div className="space-y-6 text-sm text-left animate-fade-in px-4 md:px-8 py-6 max-w-7xl mx-auto">
+            <div className="border-b border-brand-light-active pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs text-stone-500 mb-1">
+                  <span className="cursor-pointer hover:underline" onClick={() => navigateTo('home')}>Trang chủ</span>
+                  <span>/</span>
+                  <span className="font-bold text-deep-indigo">Khóa học yêu thích</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-display font-extrabold text-[#432c28] flex items-center gap-2">
+                  <Heart className="w-7 h-7 fill-deep-indigo text-deep-indigo" /> Danh sách Khóa học Yêu thích
+                </h1>
+                <p className="text-stone-500 text-xs mt-1">
+                  Tổng hợp các khóa học bạn đang quan tâm và mong muốn sở hữu trong tương lai.
+                </p>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div className="relative flex-1 md:w-64">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm trong yêu thích..."
+                    value={favSearch}
+                    onChange={(e) => setFavSearch(e.target.value)}
+                    className="w-full text-xs pl-9 pr-4 py-2 bg-white border border-stone-250 rounded-xl focus:outline-none focus:border-deep-indigo font-medium shadow-3xs"
+                  />
+                </div>
+                <select
+                  value={favCategory}
+                  onChange={(e) => setFavCategory(e.target.value)}
+                  className="border border-stone-250 rounded-xl px-3 py-2 bg-white focus:outline-none text-xs text-stone-700 font-bold shadow-3xs"
+                >
+                  <option value="All">Tất cả danh mục</option>
+                  <option value="Design">Thiết kế & Nghệ thuật</option>
+                  <option value="Artificial Intelligence">AI & Trí tuệ nhân tạo</option>
+                  <option value="Marketing">Kinh doanh & Tiếp thị</option>
+                </select>
+                <select
+                  value={favSort}
+                  onChange={(e) => setFavSort(e.target.value)}
+                  className="border border-stone-250 rounded-xl px-3 py-2 bg-white focus:outline-none text-xs text-stone-700 font-bold shadow-3xs"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="priceAsc">Giá tăng dần</option>
+                  <option value="priceDesc">Giá giảm dần</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Courses Grid / Empty State */}
+            {(() => {
+              let filtered = courses.filter(c => favorites.includes(c.id));
+              if (favSearch.trim()) {
+                filtered = filtered.filter(c => c.title.toLowerCase().includes(favSearch.toLowerCase()) || c.instructorName.toLowerCase().includes(favSearch.toLowerCase()));
+              }
+              if (favCategory !== 'All') {
+                filtered = filtered.filter(c => c.category === favCategory);
+              }
+              if (favSort === 'priceAsc') {
+                filtered.sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
+              } else if (favSort === 'priceDesc') {
+                filtered.sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
+              }
+
+              if (favorites.length === 0) {
+                return (
+                  <div className="py-16 text-center bg-white border border-stone-200 border-dashed rounded-3xl p-8 max-w-2xl mx-auto space-y-4 shadow-3xs">
+                    <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto text-stone-300 text-2xl font-bold">♡</div>
+                    <h3 className="font-display font-extrabold text-lg text-[#432c28]">Danh sách yêu thích trống</h3>
+                    <p className="text-stone-500 text-xs leading-normal">
+                      Bạn chưa thêm khóa học nào vào danh sách yêu thích. Hãy khám phá hàng trăm khóa học chất lượng cao trên MindHub và bấm biểu tượng trái tim để lưu lại nhé!
+                    </p>
+                    <button
+                      onClick={() => navigateTo('home')}
+                      className="px-6 py-2.5 bg-[#432c28] hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer inline-block"
+                    >
+                      Khám phá khóa học ngay
+                    </button>
+                  </div>
+                );
+              }
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-12 bg-white border border-stone-200 border-dashed rounded-3xl p-8 max-w-2xl mx-auto space-y-2">
+                    <p className="font-bold text-stone-700 text-sm">Không tìm thấy khóa học yêu thích phù hợp</p>
+                    <p className="text-stone-500 text-xs">Vui lòng thử điều chỉnh lại từ khóa tìm kiếm hoặc bộ lọc danh mục.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filtered.map(c => {
+                      const isEnrolled = enrolledCourseIds.includes(c.id);
+                      return (
+                        <div key={c.id} className="border border-brand-light-active rounded-3xl p-5 bg-white flex flex-col justify-between hover:shadow-xl transition-all text-left space-y-4 relative group">
+                          <button 
+                            onClick={() => {
+                              handleToggleFavorite(c.id);
+                              alert('Đã xóa khóa học khỏi danh sách yêu thích.');
+                            }}
+                            className="absolute top-3 right-3 bg-stone-100/90 hover:bg-rose-100 p-2 rounded-full text-stone-600 hover:text-rose-600 transition-all cursor-pointer shadow-3xs z-10"
+                            title="Xóa khỏi yêu thích"
+                          >
+                            ✕
+                          </button>
+                          
+                          <div className="space-y-3">
+                            <div className="w-full h-44 rounded-2xl overflow-hidden relative bg-stone-100 border border-stone-200">
+                              <img src={c.image} alt={c.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" />
+                              <span className="absolute bottom-3 left-3 text-[10px] bg-white/90 backdrop-blur-xs text-[#432c28] px-2.5 py-1 rounded-lg font-mono font-extrabold uppercase shadow-3xs">
+                                {c.subcategory}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs text-stone-500">
+                                <span className="font-medium italic">GV: {c.instructorName}</span>
+                                <span className="flex items-center gap-1 font-bold text-amber-500">
+                                  ★ {c.rating} <span className="text-stone-400 font-normal">({c.reviewCount})</span>
+                                </span>
+                              </div>
+                              <h4 className="font-extrabold text-base text-[#432c28] group-hover:text-brand-normal transition-colors line-clamp-2 leading-snug">{c.title}</h4>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                            <div className="space-y-0.5">
+                              {c.salePrice ? (
+                                <div className="flex flex-col">
+                                  <span className="text-base font-extrabold text-[#432c28]">{formatVND(c.salePrice)}</span>
+                                  <span className="text-xs text-stone-400 line-through font-mono">{formatVND(c.price)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-base font-extrabold text-[#432c28]">{formatVND(c.price)}</span>
+                              )}
+                            </div>
+
+                            {isEnrolled ? (
+                              <button 
+                                onClick={() => setStudyingCourse(c)}
+                                className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold py-2.5 px-5 rounded-xl transition-all cursor-pointer shadow-3xs"
+                              >
+                                Đã sở hữu ✓
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => handleBuyCourseNow(c.id)}
+                                className="bg-deep-indigo hover:bg-deep-indigo/90 text-white text-xs font-extrabold py-2.5 px-6 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1"
+                              >
+                                Mua Ngay
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-center pt-4">
+                    <p className="text-stone-400 text-xs font-medium">Hiển thị toàn bộ {filtered.length} khóa học yêu thích</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* --- 2. DEDICATED NOTIFICATIONS PAGE --- */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6 text-sm text-left animate-fade-in px-4 md:px-8 py-6 max-w-5xl mx-auto">
+            <div className="border-b border-brand-light-active pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs text-stone-500 mb-1">
+                  <span className="cursor-pointer hover:underline" onClick={() => navigateTo('home')}>Trang chủ</span>
+                  <span>/</span>
+                  <span className="font-bold text-deep-indigo">Thông báo</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-display font-extrabold text-[#432c28] flex items-center gap-2">
+                  <Bell className="w-7 h-7 text-brand-normal" /> Quản lý Thông báo cá nhân
+                </h1>
+                <p className="text-stone-500 text-xs mt-1">
+                  Theo dõi thông báo lịch học, cập nhật hệ thống và các sự kiện diễn ra tại MindHub.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                    alert('Đã đánh dấu đọc tất cả thông báo!');
+                  }}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-xl transition-all shadow-3xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4 text-brand-normal" />
+                  <span>Đánh dấu tất cả là đã đọc</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex border-b border-stone-200 gap-4 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setNotifFilter('all')}
+                className={`pb-2 px-2 border-b-2 transition-all cursor-pointer ${notifFilter === 'all' ? 'border-[#8b5e3c] text-[#8b5e3c]' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                Tất cả thông báo ({notifications.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setNotifFilter('unread')}
+                className={`pb-2 px-2 border-b-2 transition-all cursor-pointer ${notifFilter === 'unread' ? 'border-[#8b5e3c] text-[#8b5e3c]' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                Chưa đọc ({notifications.filter(n => !n.read).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setNotifFilter('read')}
+                className={`pb-2 px-2 border-b-2 transition-all cursor-pointer ${notifFilter === 'read' ? 'border-[#8b5e3c] text-[#8b5e3c]' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                Đã đọc ({notifications.filter(n => n.read).length})
+              </button>
+            </div>
+
+            {/* Notification List */}
+            {(() => {
+              const filtered = notifications.filter(n => {
+                if (notifFilter === 'unread') return !n.read;
+                if (notifFilter === 'read') return n.read;
+                return true;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="py-16 text-center bg-white border border-stone-200 border-dashed rounded-3xl p-8 max-w-2xl mx-auto space-y-3 shadow-3xs">
+                    <Bell className="w-12 h-12 text-stone-300 mx-auto" />
+                    <h3 className="font-display font-bold text-base text-[#432c28]">Không có thông báo nào</h3>
+                    <p className="text-stone-500 text-xs">
+                      {notifFilter === 'unread' ? 'Bạn đã đọc toàn bộ thông báo. Không có thông báo mới nào!' : 'Chưa có thông báo nào trong danh sách này.'}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {filtered.map(n => (
+                    <div
+                      key={n.id}
+                      className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+                        n.read ? 'bg-white border-stone-200 text-stone-600' : 'bg-brand-light/40 border-brand-light-active text-[#432c28] shadow-3xs font-medium'
+                      }`}
+                    >
+                      <div className="space-y-1.5 flex-1 pr-4">
+                        <div className="flex items-center gap-2">
+                          {!n.read && <span className="w-2 h-2 bg-brand-normal rounded-full shrink-0 animate-pulse"></span>}
+                          {n.targetCourseId && n.targetCourseId !== 'all' && (
+                            <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[9px] font-mono font-extrabold uppercase">LỚP THAM GIA</span>
+                          )}
+                          <h4 className="font-bold text-sm text-stone-850">{n.title}</h4>
+                        </div>
+                        <p className="text-xs text-stone-600 leading-normal">{n.message}</p>
+                        <span className="block text-[10px] text-stone-400 font-mono">{n.date}</span>
+                      </div>
+
+                      {!n.read && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
+                          }}
+                          className="px-4 py-2 bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 font-bold text-xs rounded-xl transition-all shrink-0 shadow-3xs cursor-pointer"
+                        >
+                          Đánh dấu đã đọc ✓
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* --- 3. DEDICATED PROFILE PAGE --- */}
+        {activeTab === 'profile' && (
+          <div className="space-y-8 text-sm text-left animate-fade-in px-4 md:px-8 py-6 max-w-6xl mx-auto">
+            <div className="border-b border-brand-light-active pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs text-stone-500 mb-1">
+                  <span className="cursor-pointer hover:underline" onClick={() => navigateTo('home')}>Trang chủ</span>
+                  <span>/</span>
+                  <span className="font-bold text-deep-indigo">Quản lý hồ sơ</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-display font-extrabold text-[#432c28] flex items-center gap-2">
+                  <User className="w-7 h-7 text-brand-normal" /> Cài đặt Hồ sơ & Quản lý Tài khoản
+                </h1>
+                <p className="text-stone-500 text-xs mt-1">
+                  Kiểm soát thông tin cá nhân, cập nhật bảo mật và theo dõi toàn bộ hoạt động học tập của bạn.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl transition-all shadow-3xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <LogOut className="w-4 h-4 text-rose-600" />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Profile Overview Card */}
+            <div className="bg-[#fcf8f2] border border-[#e8ded3] p-6 rounded-3xl flex flex-col md:flex-row items-center gap-6 shadow-3xs">
+              <img src={currentUser.avatar} alt="Avatar" className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover shrink-0" />
+              <div className="space-y-2 text-center md:text-left flex-1">
+                <div className="flex flex-col md:flex-row items-center gap-2">
+                  <h2 className="text-xl font-display font-extrabold text-[#432c28]">{currentUser.name}</h2>
+                  <span className="bg-stone-200 text-stone-700 px-2 py-0.5 rounded uppercase font-mono font-black text-[10px] tracking-wider">{currentUser.role}</span>
+                  <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1 font-bold text-[10px] uppercase font-mono">
+                    <Check className="w-3 h-3 text-emerald-600" /> Đã xác minh email
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600 font-mono">{currentUser.email} • SĐT: {currentUser.phone || 'Chưa cập nhật'}</p>
+                <p className="text-xs text-stone-500 italic">"{currentUser.bio || 'Chưa có thông tin giới thiệu ngắn.'}"</p>
+              </div>
+              <div className="bg-white border border-stone-200 p-4 rounded-2xl flex items-center gap-3 shadow-3xs shrink-0 w-full md:w-auto justify-center">
+                <Flame className="w-8 h-8 text-orange-500 animate-bounce" />
+                <div>
+                  <span className="text-xs text-stone-400 block font-medium">Học lực tích lũy</span>
+                  <span className="text-base font-extrabold text-[#432c28]">{currentUser.streak} ngày streak liên tiếp</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-stone-200 gap-6 text-xs font-bold overflow-x-auto tactile-scrollbar">
+              <button
+                type="button"
+                onClick={() => setProfileSectionTab('personal')}
+                className={`pb-3 px-1 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${profileSectionTab === 'personal' ? 'border-[#8b5e3c] text-[#8b5e3c] font-black' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                <User className="w-4 h-4 shrink-0" /> Chỉnh sửa hồ sơ
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileSectionTab('security')}
+                className={`pb-3 px-1 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${profileSectionTab === 'security' ? 'border-[#8b5e3c] text-[#8b5e3c] font-black' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                <Lock className="w-4 h-4 shrink-0" /> Bảo mật & Mật khẩu
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileSectionTab('preferences')}
+                className={`pb-3 px-1 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${profileSectionTab === 'preferences' ? 'border-[#8b5e3c] text-[#8b5e3c] font-black' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                <Settings className="w-4 h-4 shrink-0" /> Tùy chọn học tập
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileSectionTab('activities')}
+                className={`pb-3 px-1 border-b-2 transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${profileSectionTab === 'activities' ? 'border-[#8b5e3c] text-[#8b5e3c] font-black' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                <FileText className="w-4 h-4 shrink-0" /> Hoạt động tài khoản
+              </button>
+            </div>
+
+            {/* Tab Contents */}
+            <div className="bg-white border border-stone-200 rounded-3xl p-6 md:p-8 shadow-3xs">
+              {profileSectionTab === 'personal' && (
+                <form onSubmit={handleSaveProfile} className="space-y-6">
+                  <h3 className="font-display font-bold text-base text-[#432c28] border-b pb-2">1. Thông tin cá nhân & Ảnh đại diện</h3>
+                  
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-stone-700">Ảnh đại diện nhận diện:</label>
+                    <div className="flex flex-wrap gap-3 p-4 bg-stone-50 border border-stone-200 rounded-2xl">
+                      {AVAILABLE_AVATARS.map((url, i) => (
+                        <button
+                          type="button"
+                          key={i}
+                          onClick={() => setEditedAvatar(url)}
+                          className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                            editedAvatar === url ? 'border-[#8b5e3c] ring-4 ring-[#8b5e3c]/30 scale-105' : 'border-stone-200 hover:border-stone-400'
+                          }`}
+                        >
+                          <img src={url} alt={`Avatar option ${i}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1.5">Họ và Tên thành viên:</label>
+                      <input
+                        type="text"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        className="w-full text-xs px-4 py-2.5 border border-stone-300 rounded-xl bg-white text-stone-800 focus:border-[#8b5e3c] focus:outline-none font-medium"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1.5">Số điện thoại liên hệ:</label>
+                      <input
+                        type="tel"
+                        value={editedPhone}
+                        onChange={(e) => setEditedPhone(e.target.value)}
+                        placeholder="Ví dụ: 098 765 4321"
+                        className="w-full text-xs px-4 py-2.5 border border-stone-300 rounded-xl font-mono bg-white text-stone-800 focus:border-[#8b5e3c] focus:outline-none font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1.5">Giới thiệu ngắn (Tiểu sử học tập):</label>
+                    <textarea
+                      value={editedBio}
+                      onChange={(e) => setEditedBio(e.target.value)}
+                      rows={3}
+                      className="w-full text-xs p-4 border border-stone-300 rounded-xl bg-white text-stone-800 focus:border-[#8b5e3c] focus:outline-none font-medium"
+                      placeholder="Chia sẻ mục tiêu học tập và định hướng công việc của bạn..."
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-stone-100">
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-[#432c28] hover:bg-black text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                    >
+                      Lưu thông tin hồ sơ
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {profileSectionTab === 'security' && (
+                <div className="space-y-6 max-w-xl">
+                  <h3 className="font-display font-bold text-base text-[#432c28] border-b pb-2">2. Cập nhật Mật khẩu bảo mật</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1.5">Mật khẩu hiện tại:</label>
+                      <input
+                        type="password"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full text-xs px-4 py-2.5 border border-stone-300 rounded-xl bg-white text-stone-800 focus:border-[#8b5e3c] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1.5">Mật khẩu mới:</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Tối thiểu 6 ký tự"
+                        className="w-full text-xs px-4 py-2.5 border border-stone-300 rounded-xl bg-white text-stone-800 focus:border-[#8b5e3c] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1.5">Xác nhận mật khẩu mới:</label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Nhập lại mật khẩu mới"
+                        className="w-full text-xs px-4 py-2.5 border border-stone-300 rounded-xl bg-white text-stone-800 focus:border-[#8b5e3c] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-stone-100 flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={handleRequestAccountClosure}
+                      className="text-xs text-rose-600 hover:underline font-bold flex items-center gap-1 cursor-pointer bg-transparent border-none"
+                    >
+                      <AlertCircle className="w-4 h-4" /> Yêu cầu xóa tài khoản vĩnh viễn
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!oldPassword || !newPassword || !confirmPassword) {
+                          alert('Vui lòng điền đầy đủ thông tin mật khẩu!');
+                          return;
+                        }
+                        if (newPassword !== confirmPassword) {
+                          alert('Mật khẩu mới và Nhập lại mật khẩu không trùng khớp!');
+                          return;
+                        }
+                        alert('Cập nhật mật khẩu mới thành công!');
+                        setOldPassword('');
+                        setNewPassword('');
+                        setConfirmPassword('');
+                      }}
+                      className="px-6 py-2.5 bg-[#432c28] hover:bg-black text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                    >
+                      Xác nhận đổi mật khẩu
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {profileSectionTab === 'preferences' && (
+                <div className="space-y-6">
+                  <h3 className="font-display font-bold text-base text-[#432c28] border-b pb-2">3. Tùy chọn Học tập & Cài đặt thông báo</h3>
+                  
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-stone-700">Chủ đề học thuật quan tâm:</label>
+                    <p className="text-xs text-stone-500">Hệ thống sẽ dựa vào lựa chọn của bạn để ưu tiên đề xuất khóa học phù hợp.</p>
+                    <div className="flex flex-wrap gap-2 p-4 bg-stone-50 border border-stone-200 rounded-2xl">
+                      {PREDEFINED_TOPICS.map(topic => {
+                        const isChosen = currentUser.interestedTopics.includes(topic);
+                        return (
+                          <button
+                            type="button"
+                            key={topic}
+                            onClick={() => handleTogglePredefinedTopic(topic)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${
+                              isChosen 
+                                ? 'bg-[#8b5e3c] text-white shadow-md' 
+                                : 'bg-white hover:bg-stone-100 text-stone-700 border border-stone-200'
+                            }`}
+                          >
+                            {isChosen ? `✓ ${topic}` : `+ ${topic}`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-stone-100">
+                    <h4 className="font-bold text-stone-800 text-xs uppercase tracking-wider">Cấu hình thông báo qua Email & Tiện ích</h4>
+                    <div className="space-y-3 max-w-lg">
+                      <label className="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+                        <span className="font-bold text-xs text-stone-700">Nhận thông báo cập nhật khóa học qua Email</span>
+                        <input 
+                          type="checkbox" 
+                          checked={currentUser.notificationSettings.email}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setCurrentUser(prev => ({
+                              ...prev,
+                              notificationSettings: { ...prev.notificationSettings, email: val }
+                            }));
+                            alert(val ? 'Đã bật thông báo qua email!' : 'Đã tắt thông báo email.');
+                          }}
+                          className="rounded text-brand-normal w-4 h-4 cursor-pointer"
+                        />
+                      </label>
+                      <label className="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-xl cursor-pointer hover:bg-stone-100 transition-colors">
+                        <span className="font-bold text-xs text-stone-700">Nhắc nhở lịch học liên kết định kỳ</span>
+                        <input 
+                          type="checkbox" 
+                          checked={currentUser.notificationSettings.scheduleReminders}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setCurrentUser(prev => ({
+                              ...prev,
+                              notificationSettings: { ...prev.notificationSettings, scheduleReminders: val }
+                            }));
+                            alert(val ? 'Đã bật nhắc nhở lịch học!' : 'Đã tắt nhắc lịch!');
+                          }}
+                          className="rounded text-brand-normal w-4 h-4 cursor-pointer"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {profileSectionTab === 'activities' && (
+                <div className="space-y-8">
+                  <h3 className="font-display font-bold text-base text-[#432c28] border-b pb-2">4. Tổng quan Hoạt động Tài khoản & Đơn hàng</h3>
+                  
+                  {/* Summary Stats Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl text-left space-y-1">
+                      <span className="text-xs text-stone-500 font-medium">Khóa học đã tham gia</span>
+                      <p className="text-xl font-display font-extrabold text-[#432c28]">{enrolledCourseIds.length} khóa học</p>
+                    </div>
+                    <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl text-left space-y-1">
+                      <span className="text-xs text-stone-500 font-medium">Khóa học yêu thích</span>
+                      <p className="text-xl font-display font-extrabold text-[#432c28]">{favorites.length} khóa học</p>
+                    </div>
+                    <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl text-left space-y-1">
+                      <span className="text-xs text-stone-500 font-medium">Đơn hàng đã thanh toán</span>
+                      <p className="text-xl font-display font-extrabold text-[#432c28]">{orders.length} đơn hàng</p>
+                    </div>
+                  </div>
+
+                  {/* Orders History List */}
+                  <div className="space-y-4 pt-4 border-t border-stone-100">
+                    <h4 className="font-bold text-stone-850 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <ShoppingBag className="w-4 h-4 text-[#8b5e3c]" /> Lịch sử Đơn hàng & Thanh toán
+                    </h4>
+
+                    {orders.length === 0 ? (
+                      <div className="text-center py-10 border border-dashed border-stone-200 rounded-2xl bg-stone-50/50">
+                        <p className="text-stone-500 italic text-xs">Bạn chưa thực hiện bất kỳ giao dịch mua khóa học nào.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {orders.map((or) => {
+                          return (
+                            <div key={or.id} className="border border-stone-200 rounded-2xl p-5 space-y-3 bg-white hover:border-stone-300 transition-all text-xs shadow-3xs">
+                              <div className="flex justify-between items-start flex-wrap gap-2 pb-3 border-b border-stone-100">
+                                <div className="space-y-1 text-left">
+                                  <p className="font-bold font-mono text-stone-850 text-sm">Mã đơn: #{or.id}</p>
+                                  <p className="text-xs text-stone-500">Ngày đặt mua: {or.date}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {or.status === 'success' ? (
+                                    <span className="bg-emerald-50 text-emerald-700 font-bold font-mono text-[10px] uppercase px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
+                                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Thành công (Paid)
+                                    </span>
+                                  ) : or.status === 'pending' ? (
+                                    <span className="bg-amber-50 text-amber-700 font-bold font-mono text-[10px] uppercase px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1 animate-pulse">
+                                      <Clock className="w-3.5 h-3.5 text-amber-600" /> Chờ phê duyệt (Pending)
+                                    </span>
+                                  ) : (
+                                    <span className="bg-stone-50 text-stone-500 font-bold font-mono text-[10px] uppercase px-2.5 py-1 rounded-lg border border-stone-200 flex items-center gap-1">
+                                      <AlertCircle className="w-3.5 h-3.5 text-stone-400" /> Đã hủy (Failed)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5 text-left">
+                                {or.courses.map((c) => (
+                                  <div key={c.id} className="flex justify-between items-center text-xs">
+                                    <span className="font-bold text-stone-750 truncate max-w-[400px]">{c.title}</span>
+                                    <span className="font-mono text-stone-600 font-semibold">{formatVND(c.price)}</span>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {or.discountAmount > 0 && (
+                                <div className="flex justify-between text-xs text-emerald-600 font-bold text-left pt-1">
+                                  <span>Mã giảm giá áp dụng:</span>
+                                  <span>-{formatVND(or.discountAmount)}</span>
+                                </div>
+                              )}
+
+                              <div className="flex justify-between font-extrabold text-sm pt-2 border-t border-stone-100 text-left">
+                                <span className="text-stone-800 uppercase tracking-wider text-xs">Tổng thanh toán:</span>
+                                <span className="text-[#852b21] font-mono">{formatVND(or.total)}</span>
+                              </div>
+
+                              <div className="flex justify-between items-center flex-wrap gap-2 text-xs text-stone-500 pt-2 border-t border-stone-50">
+                                <span>Phương thức: {or.paymentMethod}</span>
+                                <div className="flex items-center gap-2">
+                                  {or.status === 'pending' && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleUpdateOrderStatus(or.id, 'success');
+                                          const relatedCourse = courses.find(c => c.id === or.courses[0]?.id);
+                                          alert(`Tuyệt vời! Thanh toán cho đơn hàng ${or.id} đã được kích hoạt thành công. Bạn đã được tự động ghi danh vào lớp "${relatedCourse?.title || 'Khóa học'}".`);
+                                        }}
+                                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all cursor-pointer shadow-3xs"
+                                      >
+                                        Phê duyệt thanh toán (Ghi danh ngay)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) {
+                                            handleUpdateOrderStatus(or.id, 'failed');
+                                          }
+                                        }}
+                                        className="px-4 py-1.5 border border-stone-200 hover:bg-red-50 hover:text-rose-600 hover:border-red-200 text-stone-600 font-bold rounded-xl transition-all cursor-pointer"
+                                      >
+                                        Hủy đơn
+                                      </button>
+                                    </>
+                                  )}
+                                  {or.status === 'success' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const relatedCourse = courses.find(c => c.id === or.courses[0]?.id);
+                                        if (relatedCourse) {
+                                          setDirectSelectCourseId(relatedCourse.id);
+                                          setStudyingCourse(relatedCourse);
+                                        } else {
+                                          alert("Khóa học không tìm thấy hoặc đã bị tháo rỡ.");
+                                        }
+                                      }}
+                                      className="px-5 py-2 bg-[#432c28] hover:bg-black text-white font-bold rounded-xl transition-all shrink-0 cursor-pointer shadow-3xs"
+                                    >
+                                      Vào học ngay »
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
           </div>
         )}
@@ -5069,46 +6404,94 @@ export default function App() {
         />
       )}
 
-      {/* --- STATIC SITE FOOTER LINKS --- */}
-      <footer className="bg-main-dark text-brand-light py-12 px-4 md:px-8 border-t border-brand-light/10 mt-12 shrink-0 select-none">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-left text-xs">
+      {/* --- RESTRUCTURED SITE FOOTER --- */}
+      <footer className="bg-[#1c1410] text-[#fbf9f6] py-14 px-4 md:px-8 border-t border-stone-800 mt-16 shrink-0 select-none">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 text-left text-xs">
           
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-white">
-              <Compass className="w-5 h-5 text-brand-normal" />
-              <span className="font-display font-medium text-sm tracking-tight">MindHub E-Learning</span>
+          {/* Column 1: Thương hiệu / giới thiệu ngắn */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5 text-white">
+              <div className="w-8 h-8 p-1 bg-pale-cyan rounded-xl flex items-center justify-center border border-emerald-250/30 shadow-3xs">
+                <img src="/favicon.svg" alt="MindHub Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className="font-suisseintl font-black text-xl tracking-tighter text-white">MindHub</span>
             </div>
-            <p className="text-gray-400 leading-normal text-[10.5pt] font-light">
-              Hệ thống quản lý thông minh kiến tạo tri thức từ việc rèn luyện thực tế kết hợp trợ lý AI Mentor đồng hành.
+            <p className="text-stone-300 leading-relaxed text-xs font-normal">
+              Hệ thống đào tạo trực tuyến thông minh kiến tạo tri thức từ việc rèn luyện thực tế kết hợp trợ lý AI Mentor đồng hành.
+            </p>
+            <p className="text-[11px] font-bold text-[#8b5e3c] italic">
+              "Thắp sáng ngọn lửa tri thức Việt"
             </p>
           </div>
 
-          <div className="space-y-2">
-            <span className="font-semibold text-white uppercase text-[10px] tracking-widest text-[#dbcdc3] block">Về MindHub</span>
-            <button onClick={() => setShowLegal('faq')} className="block text-gray-400 hover:text-white text-left font-light">Xem câu hỏi FAQ</button>
-            <button onClick={() => setShowLegal('terms')} className="block text-gray-400 hover:text-white text-left font-light">Điều khoản dịch vụ</button>
-            <button onClick={() => setShowLegal('privacy')} className="block text-gray-400 hover:text-white text-left font-light">Bản quyền thông tin</button>
+          {/* Column 2: Khám phá */}
+          <div className="space-y-3">
+            <span className="font-bold text-[#8b5e3c] uppercase text-[11px] tracking-wider block border-b border-stone-800 pb-1.5">
+              Khám Phá
+            </span>
+            <div className="space-y-2 text-stone-300 font-medium">
+              <button onClick={() => navigateTo('home')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">Khóa học hiện có</button>
+              <button onClick={() => navigateTo('home')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">Danh mục khóa học</button>
+              <button onClick={() => navigateTo('home')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">Khóa học nổi bật</button>
+              <button onClick={() => navigateTo('intro')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">Giới thiệu nền tảng & Giảng viên</button>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <span className="font-semibold text-white uppercase text-[10px] tracking-widest text-[#dbcdc3] block">Hỗ trợ khẩn cấp</span>
-            <button onClick={() => setShowLegal('contact')} className="block text-gray-400 hover:text-white text-left font-light">Gửi Ticket yêu cầu trợ giúp</button>
-            <button onClick={() => setShowLegal('refund')} className="block text-gray-400 hover:text-white text-left font-light">Chính sách hoàn trả học phí</button>
-            <span className="block text-gray-450 font-sans font-light">Email: help@mindhub.edu.vn</span>
+          {/* Column 3: Hỗ trợ (Từ FAQ & Popup '?') */}
+          <div className="space-y-3">
+            <span className="font-bold text-[#8b5e3c] uppercase text-[11px] tracking-wider block border-b border-stone-800 pb-1.5">
+              Hỗ Trợ & Chính Sách
+            </span>
+            <div className="space-y-2 text-stone-300 font-medium">
+              <button onClick={() => setShowLegal('faq')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">❓ Câu hỏi thường gặp (FAQ)</button>
+              <button onClick={() => setShowLegal('terms')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">📖 Hướng dẫn học & Điều khoản</button>
+              <button onClick={() => setShowLegal('terms')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">💳 Hướng dẫn thanh toán</button>
+              <button onClick={() => setShowLegal('refund')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">💸 Chính sách hoàn tiền 100%</button>
+              <button onClick={() => setShowLegal('contact')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">🎧 Hướng dẫn liên hệ hỗ trợ</button>
+              <button onClick={() => setShowLegal('contact')} className="block hover:text-white text-left transition-colors cursor-pointer border-none bg-transparent p-0">🐛 Báo lỗi & Gửi phản hồi</button>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <span className="font-semibold text-white uppercase text-[10px] tracking-widest text-[#dbcdc3] block">Bảo mật giao dịch</span>
-            <p className="text-gray-450 font-light">Đơn vị quản lý: Công ty Cổ phần Công nghệ Giáo Dục Quốc Tế MindHub Việt Nam.</p>
-            <span className="text-[10px] bg-white/10 text-white p-1 px-2.5 rounded block text-center font-bold">XÁC THỰC BOUTIQUE SSL</span>
+          {/* Column 4: Liên hệ / thông tin hệ thống */}
+          <div className="space-y-3">
+            <span className="font-bold text-[#8b5e3c] uppercase text-[11px] tracking-wider block border-b border-stone-800 pb-1.5">
+              Liên Hệ Hệ Thống
+            </span>
+            <div className="space-y-2 text-stone-300 font-medium leading-relaxed">
+              <p className="flex items-center gap-2">
+                <span className="text-[#8b5e3c] font-bold">Email:</span> help@mindhub.edu.vn
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-[#8b5e3c] font-bold">Hotline:</span> 1900 6868 (24/7)
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-[#8b5e3c] font-bold shrink-0">Địa chỉ:</span> Tòa nhà Tri Thức MindHub, Khu Công Nghệ Cao, Quận 9, TP. Hồ Chí Minh
+              </p>
+              <div className="pt-2 border-t border-stone-800 flex items-center gap-3 text-[#8b5e3c]">
+                <span className="font-bold text-[10px] uppercase">Mạng xã hội:</span>
+                <a href="#" className="hover:text-white transition-colors">Facebook</a>
+                <span>•</span>
+                <a href="#" className="hover:text-white transition-colors">YouTube</a>
+                <span>•</span>
+                <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
+              </div>
+            </div>
           </div>
 
         </div>
 
-        <div className="max-w-7xl mx-auto border-t border-brand-light/10 mt-8 pt-4 flex flex-col sm:flex-row justify-between items-center text-[10px] text-gray-400">
-          <span>MindHub e-learning platform © 2026. Tất cả chỉ là giao diện mô phỏng React & Tailwind CSS.</span>
-          <div className="flex gap-3 mt-2 sm:mt-0">
-            <button onClick={() => alert('Xác thực chứng chỉ MindHub bằng mã hóa block chuỗi an toàn')} className="hover:underline">Xác thực chứng chỉ công khai</button>
+        <div className="max-w-7xl mx-auto border-t border-stone-800 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-stone-400 gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <p className="font-bold text-stone-300">Công ty Cổ phần Công nghệ Giáo Dục Quốc Tế MindHub Việt Nam.</p>
+            <p>MindHub e-learning platform © 2026. Bảo lưu mọi bản quyền.</p>
+          </div>
+          <div className="flex gap-3 items-center">
+            <span className="text-[10px] bg-white/10 text-white p-1.5 px-3 rounded-lg block text-center font-bold tracking-wider">
+              XÁC THỰC BOUTIQUE SSL
+            </span>
+            <button onClick={() => alert('Xác thực chứng chỉ MindHub bằng mã hóa block chuỗi an toàn')} className="hover:underline text-stone-300 bg-transparent border-none cursor-pointer p-0">
+              Xác thực chứng chỉ
+            </button>
           </div>
         </div>
       </footer>
